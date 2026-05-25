@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Remove-Item *)",
+      "Bash(npx tsc *)",
+      "Bash(Select-Object -First 30)"
+    ]
+  }
+}
