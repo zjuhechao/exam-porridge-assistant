@@ -48,6 +48,7 @@ export function StudyAssistant() {
       setNotes(noteList);
     } catch (err) {
       setError('加载数据失败');
+      console.error('[考试粥助手] 加载数据失败：', err);
     }
   }, []);
 
@@ -99,7 +100,9 @@ export function StudyAssistant() {
       }
       await loadData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : '生成失败');
+      const msg = err instanceof Error ? err.message : '生成失败';
+      setError(msg);
+      console.error('[考试粥助手] 生成失败：', err);
     } finally {
       setIsGenerating(false);
     }

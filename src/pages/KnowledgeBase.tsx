@@ -48,6 +48,7 @@ export function KnowledgeBase() {
       setDocuments(docs);
     } catch (err) {
       setError('加载文档失败');
+      console.error('[考试粥助手] 加载文档失败：', err);
     } finally {
       setIsLoading(false);
     }
@@ -177,7 +178,9 @@ export function KnowledgeBase() {
       const result = await ocrImage(pendingImageFile, { apiConfig: ocrConfig, autoCorrect });
       setOcrResult(result);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'OCR识别失败');
+      const msg = err instanceof Error ? err.message : 'OCR识别失败';
+      setError(msg);
+      console.error('[考试粥助手] OCR识别失败：', err);
     } finally {
       setIsProcessingOCR(false);
     }
@@ -212,7 +215,9 @@ export function KnowledgeBase() {
       setOcrResult(null);
       setPendingImageFile(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : '保存失败');
+      const msg = err instanceof Error ? err.message : '保存失败';
+      setError(msg);
+      console.error('[考试粥助手] 保存失败：', err);
     } finally {
       setIsUploading(false);
       setUploadProgress('');
@@ -227,6 +232,7 @@ export function KnowledgeBase() {
       await loadDocuments();
     } catch (err) {
       setError('删除失败');
+      console.error('[考试粥助手] 删除文档失败：', err);
     }
   };
 

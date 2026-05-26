@@ -66,6 +66,8 @@ export async function chatWithAI(
     throw new Error('未配置 AI API，请先在设置中配置');
   }
 
+  const host = extractHost(config.baseUrl);
+
   const response = await fetch(buildApiUrl(config.baseUrl), {
     method: 'POST',
     headers: {
@@ -83,9 +85,18 @@ export async function chatWithAI(
   });
 
   if (!response.ok) {
-    let msg = '请求失败';
+    let msg = `HTTP ${response.status}`;
     try { const err = await response.json(); msg = err.error?.message || err.error || msg; } catch {}
-    throw new Error(msg);
+    if (response.status === 401 || response.status === 403) {
+      throw new Error(`${host} 返回 ${response.status}：API Key 无效或权限不足（${msg}）`);
+    }
+    if (response.status === 429) {
+      throw new Error(`${host} 返回 ${response.status}：请求频率超限，请稍后重试`);
+    }
+    if (response.status >= 500) {
+      throw new Error(`${host} 服务器错误 ${response.status}（${msg}），请检查 API 服务状态`);
+    }
+    throw new Error(`${host} 请求失败（${response.status}）：${msg}`);
   }
 
   const reader = response.body!.getReader();
@@ -127,8 +138,15 @@ export async function chatWithAI(
   return fullText;
 }
 
+function extractHost(baseUrl: string): string {
+  try { return new URL(baseUrl).hostname; } catch { return baseUrl; }
+}
+
 async function callAI(config: APIConfig, messages: ChatMessage[], options?: { maxTokens?: number }): Promise<string> {
-  const response = await fetch(buildApiUrl(config.baseUrl), {
+  const apiUrl = buildApiUrl(config.baseUrl);
+  const host = extractHost(config.baseUrl);
+
+  const response = await fetch(apiUrl, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -143,9 +161,22 @@ async function callAI(config: APIConfig, messages: ChatMessage[], options?: { ma
   });
 
   if (!response.ok) {
-    let msg = '请求失败';
-    try { const err = await response.json(); msg = err.error?.message || err.error || msg; } catch {}
-    throw new Error(msg);
+    let msg = `HTTP ${response.status}`;
+    try {
+      const err = await response.json();
+      msg = err.error?.message || err.error || msg;
+    } catch {}
+    // 区分常见错误类型，帮助用户快速定位
+    if (response.status === 401 || response.status === 403) {
+      throw new Error(`${host} 返回 ${response.status}：API Key 无效或权限不足（${msg}）`);
+    }
+    if (response.status === 429) {
+      throw new Error(`${host} 返回 ${response.status}：请求频率超限，请稍后重试`);
+    }
+    if (response.status >= 500) {
+      throw new Error(`${host} 服务器错误 ${response.status}（${msg}），请检查 API 服务状态`);
+    }
+    throw new Error(`${host} 请求失败（${response.status}）：${msg}`);
   }
 
   const data = await response.json();
@@ -209,6 +240,7 @@ function parseQuestionsResponse(text: string): GeneratedQuestion[] {
     } catch {}
   }
 
+  console.warn('[考试粥助手] AI 返回内容未能解析为题目格式，原始内容：', text.slice(0, 500));
   return [];
 }
 
@@ -310,9 +342,16 @@ export async function ocrImage(
   });
 
   if (!response.ok) {
-    let msg = 'OCR识别失败';
+    let msg = `HTTP ${response.status}`;
     try { const err = await response.json(); msg = err.error?.message || err.error || msg; } catch {}
-    throw new Error(msg);
+    const host = extractHost(config.baseUrl);
+    if (response.status === 401 || response.status === 403) {
+      throw new Error(`${host} OCR 认证失败（${response.status}）：API Key 无效或权限不足`);
+    }
+    if (response.status === 429) {
+      throw new Error(`${host} OCR 请求频率超限，请稍后重试`);
+    }
+    throw new Error(`${host} OCR 识别失败（${response.status}）：${msg}`);
   }
 
   const data = await response.json();
@@ -440,9 +479,16 @@ export async function parseQuestionsFromImages(
     });
 
     if (!response.ok) {
-      let msg = '图片识别失败';
+      let msg = `HTTP ${response.status}`;
       try { const err = await response.json(); msg = err.error?.message || err.error || msg; } catch {}
-      throw new Error(msg);
+      const host = extractHost(config.baseUrl);
+      if (response.status === 401 || response.status === 403) {
+        throw new Error(`${host} 图片识别认证失败（${response.status}）：API Key 无效或权限不足`);
+      }
+      if (response.status === 429) {
+        throw new Error(`${host} 图片识别请求频率超限，请稍后重试`);
+      }
+      throw new Error(`${host} 图片识别失败（${response.status}）：${msg}`);
     }
 
     const data = await response.json();

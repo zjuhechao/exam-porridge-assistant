@@ -105,6 +105,7 @@ export function Quiz() {
       setAvailableSources(Array.from(sources));
     } catch (err) {
       setError('加载数据失败');
+      console.error('[考试粥助手] 加载数据失败：', err);
     }
   }, []);
 
@@ -160,7 +161,9 @@ export function Quiz() {
         setError('未能生成题目，请重试');
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : '生成题目失败');
+      const msg = err instanceof Error ? err.message : '生成题目失败';
+      setError(msg);
+      console.error('[考试粥助手] 生成题目失败：', err);
     } finally {
       setIsGenerating(false);
     }
@@ -197,6 +200,7 @@ export function Quiz() {
       }
     } catch (err) {
       setError('文件读取失败');
+      console.error('[考试粥助手] 文件读取失败：', err);
     }
     e.target.value = '';
   };
@@ -286,7 +290,9 @@ export function Quiz() {
 
       setImportResult({ total: result.questions.length, types });
     } catch (err) {
-      setError(err instanceof Error ? err.message : '识别题目失败');
+      const msg = err instanceof Error ? err.message : '识别题目失败';
+      setError(msg);
+      console.error('[考试粥助手] 识别题目失败：', err);
     } finally {
       setIsImporting(false);
     }

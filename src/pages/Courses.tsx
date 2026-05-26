@@ -79,6 +79,7 @@ export function Courses() {
       setUserCourses(myCourses);
     } catch (err) {
       setError('加载数据失败');
+      console.error('[考试粥助手] 加载数据失败：', err);
     } finally {
       setIsLoading(false);
     }
@@ -110,6 +111,7 @@ export function Courses() {
       }
     } catch (err) {
       setError('创建课程失败');
+      console.error('[考试粥助手] 创建课程失败：', err);
     }
   };
 
@@ -119,6 +121,7 @@ export function Courses() {
       await loadData();
     } catch (err) {
       setError('加入课程失败');
+      console.error('[考试粥助手] 加入课程失败：', err);
     }
   };
 
@@ -128,6 +131,7 @@ export function Courses() {
       await loadData();
     } catch (err) {
       setError('退出课程失败');
+      console.error('[考试粥助手] 退出课程失败：', err);
     }
   };
 
@@ -146,6 +150,7 @@ export function Courses() {
       await loadData();
     } catch (err) {
       setError('切换课程失败');
+      console.error('[考试粥助手] 切换课程失败：', err);
     }
   };
 
