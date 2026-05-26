@@ -58,6 +58,12 @@ export function Quiz() {
     difficulty: 2,
     types: ['choice', 'fill_blank', 'judgment'],
   });
+  const [typePreset, setTypePreset] = useState<string>('mixed');
+  const typePresets: Record<string, { label: string; types: string[] }> = {
+    mixed: { label: '混合题型（选择+填空+判断）', types: ['choice', 'fill_blank', 'judgment'] },
+    choice_only: { label: '仅选择题', types: ['choice'] },
+    choice_judgment: { label: '选择题+判断题', types: ['choice', 'judgment'] },
+  };
   const [quizMode, setQuizMode] = useState<'generate' | 'quiz_bank'>('generate');
   const [quizBankSource, setQuizBankSource] = useState<'upload' | 'existing'>('upload');
   const [uploadedContent, setUploadedContent] = useState<string | null>(null);
@@ -500,7 +506,7 @@ export function Quiz() {
                   <input
                     type="number"
                     min="1"
-                    max="50"
+                    max="200"
                     value={config.count}
                     onChange={(e) => setConfig({ ...config, count: parseInt(e.target.value) })}
                     className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-100"
@@ -516,6 +522,27 @@ export function Quiz() {
                     onChange={(e) => setConfig({ ...config, difficulty: parseInt(e.target.value) })}
                     className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-100"
                   />
+                </div>
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm text-slate-400 mb-2">题型</label>
+                <div className="flex flex-wrap gap-2">
+                  {Object.entries(typePresets).map(([key, preset]) => (
+                    <button
+                      key={key}
+                      onClick={() => {
+                        setTypePreset(key);
+                        setConfig({ ...config, types: preset.types });
+                      }}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                        typePreset === key
+                          ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50'
+                          : 'bg-slate-800 text-slate-400 border border-slate-700 hover:border-slate-600'
+                      }`}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
                 </div>
               </div>
               <button
