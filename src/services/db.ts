@@ -296,8 +296,25 @@ export async function createCourse(course: { name: string; description: string; 
 }
 
 export async function deleteCourse(id: string): Promise<boolean> {
+  // 先收集关联的文档 ID
+  const docIds = await db.documents.where('course_id').equals(id).primaryKeys();
   await db.courses.delete(id);
   await db.user_courses.where('course_id').equals(id).delete();
+  await db.documents.where('course_id').equals(id).delete();
+  await db.questions.where('course_id').equals(id).delete();
+  await db.wrong_questions.where('course_id').equals(id).delete();
+  await db.summaries.where('course_id').equals(id).delete();
+  await db.notes.where('course_id').equals(id).delete();
+  if (docIds.length > 0) {
+    await db.document_chunks.where('document_id').anyOf(docIds as string[]).delete();
+  }
+  return true;
+}
+
+// 批量删除题目
+export async function deleteQuestions(ids: string[]): Promise<boolean> {
+  await db.questions.where('id').anyOf(ids).delete();
+  await db.wrong_questions.where('question_id').anyOf(ids).delete();
   return true;
 }
 

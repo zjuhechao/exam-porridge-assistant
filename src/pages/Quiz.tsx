@@ -32,6 +32,7 @@ import {
   createPracticeAnswer,
   addWrongQuestion,
   deleteQuestion,
+  deleteQuestions,
   getCurrentCourseId,
   getCorrectlyAnsweredQuestionIds,
   createDocument,
@@ -95,6 +96,9 @@ export function Quiz() {
   const [isFetchingUrl, setIsFetchingUrl] = useState(false);
   const [importMode, setImportMode] = useState<'ai' | 'pure'>('pure');
   const [localParsedQuestions, setLocalParsedQuestions] = useState<GeneratedQuestion[] | null>(null);
+  const [showQuestionBank, setShowQuestionBank] = useState(false);
+  const [selectedQIds, setSelectedQIds] = useState<Set<string>>(new Set());
+  const [typeFilter, setTypeFilter] = useState<string>('all');
 
   useEffect(() => {
     // 获取题目生成API配置
@@ -519,6 +523,27 @@ export function Quiz() {
     } catch {}
   };
 
+  const handleBulkDelete = async () => {
+    if (selectedQIds.size === 0) return;
+    if (!confirm(`确定要删除选中的 ${selectedQIds.size} 道题目吗？`)) return;
+
+    try {
+      await deleteQuestions(Array.from(selectedQIds));
+      setSelectedQIds(new Set());
+      await loadData();
+    } catch (err) {
+      setError('批量删除失败');
+      console.error('[考试粥助手] 批量删除失败：', err);
+    }
+  };
+
+  const toggleSelectQuestion = (id: string) => {
+    const next = new Set(selectedQIds);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setSelectedQIds(next);
+  };
+
   const availableQuestions = selectedDoc
     ? questions.filter((q) => q.document_id === selectedDoc)
     : questions;
@@ -526,6 +551,7 @@ export function Quiz() {
   const filteredQuestions = availableQuestions.filter((q) => {
     if (sourceFilter !== 'all' && (q.source || '') !== sourceFilter) return false;
     if (onlyUnanswered && correctQuestionIds.has(q.id)) return false;
+    if (typeFilter !== 'all' && q.question_type !== typeFilter) return false;
     return true;
   });
 
@@ -1104,7 +1130,21 @@ D. 选项四
                     </select>
                   </div>
                 )}
-                <label className="flex items-center gap-2 cursor-pointer select-none mt-4">
+                <div>
+                  <label className="block text-xs text-muted mb-1">题型</label>
+                  <select
+                    value={typeFilter}
+                    onChange={(e) => setTypeFilter(e.target.value)}
+                    className="px-3 py-1.5 rounded-lg bg-elevated border border-elevated text-heading text-sm"
+                  >
+                    <option value="all">全部题型</option>
+                    <option value="choice">选择题</option>
+                    <option value="judgment">判断题</option>
+                    <option value="fill_blank">填空题</option>
+                    <option value="short_answer">简答题</option>
+                  </select>
+                </div>
+                <label className="flex items-center gap-2 cursor-pointer select-none">
                   <input
                     type="checkbox"
                     checked={onlyUnanswered}
@@ -1113,8 +1153,81 @@ D. 选项四
                   />
                   <span className="text-sm text-label">只做未完成的题目</span>
                 </label>
+                <button
+                  onClick={() => setShowQuestionBank(!showQuestionBank)}
+                  className={`px-3 py-1.5 rounded-lg text-sm transition-colors flex items-center gap-1 ${
+                    showQuestionBank ? 'bg-red-500/10 text-red-400' : 'bg-elevated text-body hover-text-heading'
+                  }`}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  题库管理
+                </button>
               </div>
             </div>
+
+            {/* Question Bank Management */}
+            {showQuestionBank && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-6 rounded-xl bg-card border border-card mt-6"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-medium text-title">题库管理</h3>
+                  <div className="flex items-center gap-2">
+                    {selectedQIds.size > 0 && (
+                      <button
+                        onClick={handleBulkDelete}
+                        className="px-3 py-1.5 rounded-lg bg-red-500/20 text-red-400 text-sm font-medium flex items-center gap-1"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        删除选中 ({selectedQIds.size})
+                      </button>
+                    )}
+                    <button
+                      onClick={() => { setShowQuestionBank(false); setSelectedQIds(new Set()); }}
+                      className="px-3 py-1.5 rounded-lg bg-elevated text-body text-sm"
+                    >
+                      关闭
+                    </button>
+                  </div>
+                </div>
+                <p className="text-xs text-muted mb-3">共 {availableQuestions.length} 道题目，勾选后批量删除</p>
+                <div className="max-h-80 overflow-y-auto space-y-1">
+                  {availableQuestions.length === 0 ? (
+                    <p className="text-sm text-body py-8 text-center">暂无题目</p>
+                  ) : (
+                    availableQuestions.map((q) => (
+                      <div
+                        key={q.id}
+                        className={`flex items-center gap-3 p-2 rounded-lg text-sm transition-colors cursor-pointer hover-bg-elevated ${
+                          selectedQIds.has(q.id) ? 'bg-red-500/10' : ''
+                        }`}
+                        onClick={() => toggleSelectQuestion(q.id)}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedQIds.has(q.id)}
+                          onChange={() => toggleSelectQuestion(q.id)}
+                          className="w-4 h-4 rounded border-slate-600 text-red-500 focus:ring-red-500 bg-elevated flex-shrink-0"
+                        />
+                        <span className={`px-1.5 py-0.5 rounded text-xs font-medium flex-shrink-0 ${
+                          q.question_type === 'choice' ? 'bg-blue-500/20 text-blue-400' :
+                          q.question_type === 'judgment' ? 'bg-green-500/20 text-green-400' :
+                          q.question_type === 'fill_blank' ? 'bg-purple-500/20 text-primary-2' :
+                          'bg-orange-500/20 text-orange-400'
+                        }`}>
+                          {q.question_type === 'choice' ? '选择' : q.question_type === 'judgment' ? '判断' : q.question_type === 'fill_blank' ? '填空' : '简答'}
+                        </span>
+                        <span className="text-body truncate flex-1">{q.question_text}</span>
+                        <span className="text-muted text-xs flex-shrink-0">{q.source || ''}</span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </motion.div>
+            )}
+
           </>
         ) : (
           /* Practice Mode */

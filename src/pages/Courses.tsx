@@ -12,9 +12,10 @@ import {
   Landmark,
   BookOpen as BookOpenIcon,
   Code,
+  Trash2,
 } from 'lucide-react';
 import type { Course, UserCourse } from '../types';
-import { getCourses, createCourse, getUserCourses, joinCourse, leaveCourse, setActiveCourseForUser } from '../services/db';
+import { getCourses, createCourse, getUserCourses, joinCourse, leaveCourse, setActiveCourseForUser, deleteCourse } from '../services/db';
 
 const subjectIcons: Record<string, React.ElementType> = {
   math: Calculator,
@@ -132,6 +133,18 @@ export function Courses() {
     } catch (err) {
       setError('退出课程失败');
       console.error('[考试粥助手] 退出课程失败：', err);
+    }
+  };
+
+  const handleDeleteCourse = async (courseId: string, courseName: string) => {
+    if (!confirm(`确定要删除课程「${courseName}」吗？\n\n该课程下的所有文档、题目、错题、笔记都将被永久删除，不可恢复！`)) return;
+
+    try {
+      await deleteCourse(courseId);
+      await loadData();
+    } catch (err) {
+      setError('删除课程失败');
+      console.error('[考试粥助手] 删除课程失败：', err);
     }
   };
 
@@ -259,12 +272,22 @@ export function Courses() {
                             </span>
                           ) : '设为当前'}
                         </button>
-                        <button
-                          onClick={() => handleLeave(course.id)}
-                          className="text-sm text-red-400 hover:text-red-300"
-                        >
-                          退出
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleDeleteCourse(course.id, course.name)}
+                            className="text-sm text-red-400 hover:text-red-300 flex items-center gap-1"
+                            title="删除课程及所有关联数据"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            删除
+                          </button>
+                          <button
+                            onClick={() => handleLeave(course.id)}
+                            className="text-sm text-red-400 hover:text-red-300"
+                          >
+                            退出
+                          </button>
+                        </div>
                       </>
                     ) : (
                       <button
