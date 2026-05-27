@@ -10,13 +10,14 @@ import {
   CheckCircle,
   Link2,
   Globe,
+  Trash2,
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import type { Document, Summary, Note, APIConfig } from '../types';
-import { getDocumentsByCourse, getSummariesByCourse, getNotesByCourse, createSummary, createNote, getCurrentCourseId, createDocument, createDocumentChunks, updateDocumentContent } from '../services/db';
+import { getDocumentsByCourse, getSummariesByCourse, getNotesByCourse, createSummary, createNote, deleteSummary, deleteNote, getCurrentCourseId, createDocument, createDocumentChunks, updateDocumentContent } from '../services/db';
 import { generateSummary, generateNotes, getAPIConfigForFunction, fetchUrlContent, chunkText } from '../services/api';
 
 export function StudyAssistant() {
@@ -180,6 +181,20 @@ export function StudyAssistant() {
     a.download = `${activeTab === 'summary' ? '复习纲要' : '学习笔记'}_${new Date().toISOString().slice(0, 10)}.md`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const handleDeleteHistory = async (id: string) => {
+    try {
+      if (activeTab === 'summary') {
+        await deleteSummary(id);
+      } else {
+        await deleteNote(id);
+      }
+      await loadData();
+    } catch (err) {
+      setError('删除失败');
+      console.error('[考试粥助手] 删除失败：', err);
+    }
   };
 
   const currentList = activeTab === 'summary' ? summaries : notes;
@@ -363,13 +378,29 @@ export function StudyAssistant() {
                   currentList.map((item) => (
                     <div
                       key={item.id}
-                      onClick={() => setGeneratedContent(item.content)}
-                      className="p-3 rounded-lg bg-elevated-50 hover-bg-elevated cursor-pointer transition-colors"
+                      className="group relative"
                     >
-                      <p className="text-sm text-heading truncate">{item.title}</p>
-                      <p className="text-xs text-muted mt-1">
-                        {item.created_at ? new Date(item.created_at).toLocaleDateString() : ''}
-                      </p>
+                      <div
+                        onClick={() => setGeneratedContent(item.content)}
+                        className="p-3 rounded-lg bg-elevated-50 hover-bg-elevated cursor-pointer transition-colors"
+                      >
+                        <p className="text-sm text-heading truncate">{item.title}</p>
+                        <div className="flex items-center justify-between mt-1">
+                          <p className="text-xs text-muted">
+                            {item.created_at ? new Date(item.created_at).toLocaleDateString() : ''}
+                          </p>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (confirm('确定删除这条记录吗？')) handleDeleteHistory(item.id);
+                            }}
+                            className="opacity-0 group-hover:opacity-100 p-1 rounded text-muted hover:text-red-400 hover:bg-red-500/10 transition-all"
+                            title="删除"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   ))
                 )}

@@ -265,6 +265,11 @@ export async function createSummary(summary: { document_id: string | null; title
   return record as Summary;
 }
 
+export async function deleteSummary(id: string): Promise<boolean> {
+  await db.summaries.delete(id);
+  return true;
+}
+
 // 学习笔记
 export async function getNotes(documentId?: string): Promise<Note[]> {
   if (documentId) {
@@ -280,6 +285,11 @@ export async function createNote(note: { document_id: string | null; title: stri
   const record = { ...note, id, course_id: courseId, created_at: new Date().toISOString() };
   await db.notes.add(record);
   return record as Note;
+}
+
+export async function deleteNote(id: string): Promise<boolean> {
+  await db.notes.delete(id);
+  return true;
 }
 
 // 课程操作
