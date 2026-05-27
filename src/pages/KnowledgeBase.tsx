@@ -252,11 +252,11 @@ export function KnowledgeBase() {
         <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-slate-100 mb-2">知识库管理</h1>
-              <p className="text-slate-400">上传学习资料，构建你的个人知识库</p>
+              <h1 className="text-3xl font-bold text-title mb-2">知识库管理</h1>
+              <p className="text-body">上传学习资料，构建你的个人知识库</p>
             </div>
             {currentCourseId && (
-              <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
+              <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-grad-from/10 border border-grad-from/20 text-primary">
                 <BookOpen className="w-4 h-4" />
                 <span className="text-sm">当前课程模式</span>
               </div>
@@ -285,8 +285,8 @@ export function KnowledgeBase() {
           <label
             className={`relative block p-8 rounded-2xl border-2 border-dashed transition-all duration-300 cursor-pointer ${
               isUploading
-                ? 'border-cyan-500/50 bg-cyan-500/5'
-                : 'border-slate-700 hover:border-cyan-500/50 hover:bg-slate-800/50'
+                ? 'border-grad-from/50 bg-grad-from/5'
+                : 'border-elevated hover:border-grad-from/50 hover-bg-elevated-50'
             }`}
           >
             <input
@@ -300,17 +300,17 @@ export function KnowledgeBase() {
             <div className="text-center">
               {isUploading ? (
                 <>
-                  <Loader2 className="w-12 h-12 text-cyan-400 mx-auto mb-4 animate-spin" />
-                  <p className="text-cyan-400 font-medium">{uploadProgress}</p>
+                  <Loader2 className="w-12 h-12 text-primary mx-auto mb-4 animate-spin" />
+                  <p className="text-primary font-medium">{uploadProgress}</p>
                 </>
               ) : (
                 <>
-                  <Upload className="w-12 h-12 text-slate-500 mx-auto mb-4" />
-                  <p className="text-slate-300 font-medium mb-2">点击或拖拽上传文件（支持多选）</p>
-                  <p className="text-slate-500 text-sm">
+                  <Upload className="w-12 h-12 text-muted mx-auto mb-4" />
+                  <p className="text-label font-medium mb-2">点击或拖拽上传文件（支持多选）</p>
+                  <p className="text-muted text-sm">
                     支持 PDF、DOCX、TXT、MD、CSV、HTML、JSON、图片等格式，单个文件最大 500MB
                   </p>
-                  <p className="text-slate-400 text-xs mt-1">
+                  <p className="text-body text-xs mt-1">
                     PDF 和 DOCX 支持自动文本提取，图片支持 OCR 文字识别
                   </p>
                 </>
@@ -321,25 +321,25 @@ export function KnowledgeBase() {
 
         <div className="mb-6">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted" />
             <input
               type="text"
               placeholder="搜索文档..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-900 border border-slate-700 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500/50"
+              className="w-full pl-10 pr-4 py-3 rounded-xl bg-card border border-elevated text-title placeholder-slate-500 focus:outline-none focus:border-grad-from/50"
             />
           </div>
         </div>
 
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
+            <Loader2 className="w-8 h-8 text-primary animate-spin" />
           </div>
         ) : filteredDocuments.length === 0 ? (
           <div className="text-center py-12">
-            <FileText className="w-16 h-16 text-slate-600 mx-auto mb-4" />
-            <p className="text-slate-400">
+            <FileText className="w-16 h-16 text-foot mx-auto mb-4" />
+            <p className="text-body">
               {searchQuery ? '没有找到匹配的文档' : '暂无文档，请上传学习资料'}
             </p>
           </div>
@@ -350,32 +350,32 @@ export function KnowledgeBase() {
                 key={doc.id}
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="p-4 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition-colors"
+                className="p-4 rounded-xl bg-card border border-card hover-border-elevated transition-colors"
               >
                 <div className="flex items-start gap-3">
                   <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
                     doc.file_type.match(/\.(jpg|jpeg|png|gif|webp|bmp)$/)
                       ? 'bg-gradient-to-br from-purple-500/20 to-pink-500/20'
-                      : 'bg-gradient-to-br from-cyan-500/20 to-purple-500/20'
+                      : 'bg-gradient-to-br from-grad-from/20 to-grad-to/20'
                   }`}>
                     {doc.file_type.match(/\.(jpg|jpeg|png|gif|webp|bmp)$/) ? (
                       <ImageIcon className="w-5 h-5 text-purple-400" />
                     ) : (
-                      <FileText className="w-5 h-5 text-cyan-400" />
+                      <FileText className="w-5 h-5 text-primary" />
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-medium text-slate-100 truncate" title={doc.filename}>
+                    <h3 className="font-medium text-title truncate" title={doc.filename}>
                       {doc.filename}
                     </h3>
-                    <div className="flex items-center gap-2 mt-1 text-sm text-slate-500">
+                    <div className="flex items-center gap-2 mt-1 text-sm text-muted">
                       <span>{doc.file_type.toUpperCase()}</span>
                       <span>·</span>
                       <span>{formatFileSize(doc.file_size || 0)}</span>
                     </div>
-                    <div className="flex items-center gap-2 mt-2 text-xs text-slate-500">
+                    <div className="flex items-center gap-2 mt-2 text-xs text-muted">
                       {doc.chunk_count && doc.chunk_count > 0 && (
-                        <span className="flex items-center gap-1 text-cyan-400">
+                        <span className="flex items-center gap-1 text-primary">
                           <CheckCircle className="w-3 h-3" />
                           已分块 ({doc.chunk_count})
                         </span>
@@ -384,7 +384,7 @@ export function KnowledgeBase() {
                   </div>
                   <button
                     onClick={() => handleDelete(doc.id)}
-                    className="p-2 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                    className="p-2 rounded-lg text-muted hover:text-red-400 hover:bg-red-500/10 transition-colors"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -400,9 +400,9 @@ export function KnowledgeBase() {
             animate={{ opacity: 1 }}
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80"
           >
-            <div className="w-full max-w-4xl max-h-[90vh] bg-slate-900 rounded-2xl border border-slate-700 overflow-hidden">
-              <div className="flex items-center justify-between p-4 border-b border-slate-800">
-                <h3 className="text-lg font-semibold text-slate-100 flex items-center gap-2">
+            <div className="w-full max-w-4xl max-h-[90vh] bg-card rounded-2xl border border-elevated overflow-hidden">
+              <div className="flex items-center justify-between p-4 border-b border-card">
+                <h3 className="text-lg font-semibold text-title flex items-center gap-2">
                   <Sparkles className="w-5 h-5 text-purple-400" />
                   图片OCR识别
                 </h3>
@@ -413,7 +413,7 @@ export function KnowledgeBase() {
                     setOcrResult(null);
                     setPendingImageFile(null);
                   }}
-                  className="p-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800"
+                  className="p-2 rounded-lg text-body hover-text-heading hover-bg-elevated"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -421,19 +421,19 @@ export function KnowledgeBase() {
 
               <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[70vh] overflow-y-auto">
                 <div>
-                  <p className="text-sm text-slate-400 mb-2">图片预览</p>
+                  <p className="text-sm text-body mb-2">图片预览</p>
                   <img
                     src={selectedImage}
                     alt="Preview"
-                    className="w-full rounded-lg border border-slate-700"
+                    className="w-full rounded-lg border border-elevated"
                   />
                 </div>
 
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-sm text-slate-400">识别结果</p>
+                    <p className="text-sm text-body">识别结果</p>
                     <div className="flex items-center gap-2">
-                      <label className="flex items-center gap-1 text-xs text-slate-400 cursor-pointer">
+                      <label className="flex items-center gap-1 text-xs text-body cursor-pointer">
                         <input
                           type="checkbox"
                           checked={autoCorrect}
@@ -447,8 +447,8 @@ export function KnowledgeBase() {
 
                   {ocrResult ? (
                     <div className="space-y-3">
-                      <div className="p-3 rounded-lg bg-slate-800 border border-slate-700">
-                        <p className="text-slate-200 whitespace-pre-wrap text-sm">{ocrResult.text}</p>
+                      <div className="p-3 rounded-lg bg-elevated border border-elevated">
+                        <p className="text-heading whitespace-pre-wrap text-sm">{ocrResult.text}</p>
                       </div>
 
                       {ocrResult.corrections && ocrResult.corrections.length > 0 && (
@@ -459,34 +459,34 @@ export function KnowledgeBase() {
                           </p>
                           <div className="space-y-1 text-xs">
                             {ocrResult.corrections.slice(0, 5).map((c, i) => (
-                              <div key={i} className="flex items-center gap-2 text-slate-400">
+                              <div key={i} className="flex items-center gap-2 text-body">
                                 <span className="text-red-400">{c.original}</span>
                                 <span>→</span>
                                 <span className="text-green-400">{c.corrected}</span>
                               </div>
                             ))}
                             {ocrResult.corrections.length > 5 && (
-                              <p className="text-slate-500">...还有{ocrResult.corrections.length - 5}处</p>
+                              <p className="text-muted">...还有{ocrResult.corrections.length - 5}处</p>
                             )}
                           </div>
                         </div>
                       )}
                     </div>
                   ) : (
-                    <div className="p-8 rounded-lg bg-slate-800 border border-slate-700 text-center">
-                      <Eye className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-                      <p className="text-slate-400 text-sm">点击识别按钮开始OCR</p>
+                    <div className="p-8 rounded-lg bg-elevated border border-elevated text-center">
+                      <Eye className="w-12 h-12 text-foot mx-auto mb-3" />
+                      <p className="text-body text-sm">点击识别按钮开始OCR</p>
                     </div>
                   )}
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-3 p-4 border-t border-slate-800">
+              <div className="flex items-center justify-end gap-3 p-4 border-t border-card">
                 {!ocrResult ? (
                   <button
                     onClick={handleOCR}
                     disabled={isProcessingOCR || !ocrConfig}
-                    className="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-600 text-white font-medium disabled:opacity-50 flex items-center gap-2"
+                    className="px-4 py-2 rounded-lg bg-gradient-to-r from-grad-from to-grad-to text-white font-medium disabled:opacity-50 flex items-center gap-2"
                   >
                     {isProcessingOCR ? (
                       <>
@@ -504,14 +504,14 @@ export function KnowledgeBase() {
                   <>
                     <button
                       onClick={() => setOcrResult(null)}
-                      className="px-4 py-2 rounded-lg bg-slate-800 text-slate-300 font-medium hover:bg-slate-700"
+                      className="px-4 py-2 rounded-lg bg-elevated text-label font-medium hover-bg-hover"
                     >
                       重新识别
                     </button>
                     <button
                       onClick={handleSaveOCRResult}
                       disabled={isUploading}
-                      className="px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-medium disabled:opacity-50 flex items-center gap-2"
+                      className="px-4 py-2 rounded-lg bg-gradient-to-r from-grad-from to-grad-to text-white font-medium disabled:opacity-50 flex items-center gap-2"
                     >
                       {isUploading ? (
                         <>

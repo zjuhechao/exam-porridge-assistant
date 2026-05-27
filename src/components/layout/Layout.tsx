@@ -29,17 +29,17 @@ export function Layout() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
+    <div className="min-h-screen bg-page text-title">
       {/* 顶部导航栏 */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-md border-b border-slate-800">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-page/80 backdrop-blur-md border-b border-card">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-grad-from to-grad-to flex items-center justify-center">
                 <Brain className="w-5 h-5 text-white" />
               </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
+              <span className="text-xl font-bold bg-gradient-to-r from-primary to-primary-2 bg-clip-text text-transparent">
                 考试粥助手
               </span>
             </Link>
@@ -54,14 +54,14 @@ export function Layout() {
                     to={item.path}
                     className={`relative px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                       isActive
-                        ? 'text-cyan-400'
-                        : 'text-slate-400 hover:text-slate-200'
+                        ? 'text-primary'
+                        : 'text-body hover-text-heading'
                     }`}
                   >
                     {isActive && (
                       <motion.div
                         layoutId="activeNav"
-                        className="absolute inset-0 bg-slate-800/50 rounded-lg"
+                        className="absolute inset-0 bg-elevated-50 rounded-lg"
                         transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
                       />
                     )}
@@ -77,7 +77,7 @@ export function Layout() {
             {/* 移动端菜单按钮 */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden p-2 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800"
+              className="md:hidden p-2 rounded-lg text-body hover-text-heading hover-bg-elevated"
             >
               {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
@@ -90,7 +90,7 @@ export function Layout() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="md:hidden border-t border-slate-800 bg-slate-950/95"
+            className="md:hidden border-t border-card bg-page/95"
           >
             <nav className="px-4 py-2 space-y-1">
               {navItems.map((item) => {
@@ -102,8 +102,8 @@ export function Layout() {
                     onClick={() => setIsMobileMenuOpen(false)}
                     className={`flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
                       isActive
-                        ? 'bg-slate-800 text-cyan-400'
-                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
+                        ? 'bg-elevated text-primary'
+                        : 'text-body hover-text-heading hover-bg-elevated-50'
                     }`}
                   >
                     <item.icon className="w-5 h-5" />

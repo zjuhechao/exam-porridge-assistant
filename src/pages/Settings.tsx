@@ -20,8 +20,10 @@ import {
   Shield,
   ChevronDown,
   ChevronUp,
+  Palette,
 } from 'lucide-react';
 import type { APIConfig, FunctionAPIConfig } from '../types';
+import { useTheme, THEME_LABELS, type ThemeId, type BgMode, type CustomColors } from '../contexts/ThemeContext';
 
 const DEFAULT_API_CONFIG: APIConfig = {
   id: '',
@@ -40,6 +42,32 @@ const FUNCTION_LABELS: Record<keyof FunctionAPIConfig, { label: string; icon: Re
   generateNotes: { label: '生成笔记', icon: <StickyNote className="w-4 h-4" />, desc: '学习笔记整理' },
   ocr: { label: 'OCR 识别', icon: <ScanLine className="w-4 h-4" />, desc: '图片文字识别（需多模态模型）' },
 };
+
+function ColorInput({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  const rgb = value.split(/\s+/).map(Number);
+  const valid = rgb.length === 3 && rgb.every(n => n >= 0 && n <= 255);
+  return (
+    <div>
+      <label className="flex items-center justify-between text-sm text-body mb-1.5">
+        <span>{label}</span>
+        <span className="flex items-center gap-2">
+          <span className={`inline-block w-4 h-4 rounded border ${valid ? 'border-transparent' : 'border-red-500/50'}`}
+                style={valid ? { backgroundColor: `rgb(${value})` } : undefined} />
+          <span className="text-xs font-mono text-muted">{valid ? `rgb(${value})` : '无效'}</span>
+        </span>
+      </label>
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="例如 34 211 238"
+        className={`w-full px-3 py-2 rounded-lg bg-elevated border text-sm font-mono text-title placeholder-slate-600 focus:outline-none ${
+          valid ? 'border-elevated focus:border-grad-from/50' : 'border-red-500/50 focus:border-red-500'
+        }`}
+      />
+    </div>
+  );
+}
 
 export function Settings() {
   // API配置列表
@@ -65,6 +93,14 @@ export function Settings() {
   const [dataIsolation, setDataIsolation] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
   const [error, setError] = useState('');
+  const { theme, setTheme, customColors, setCustomColors, bgMode, setBgMode } = useTheme();
+  const [editCustom, setEditCustom] = useState<CustomColors>(customColors);
+
+  useEffect(() => {
+    if (theme === 'custom') {
+      setEditCustom(customColors);
+    }
+  }, [customColors, theme]);
 
   useEffect(() => {
     // 从 localStorage 加载设置
@@ -209,13 +245,29 @@ export function Settings() {
     setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
   };
 
+  const getThemePreviewGradient = (themeId: ThemeId) => {
+    if (themeId === 'custom') {
+      const c = editCustom;
+      return ''; // custom uses inline style
+    }
+    const gradients: Record<string, string> = {
+      ocean: 'from-cyan-400 to-purple-500',
+      forest: 'from-emerald-400 to-teal-500',
+      sunset: 'from-orange-400 to-rose-500',
+      starry: 'from-indigo-400 to-violet-500',
+      sakura: 'from-pink-400 to-fuchsia-500',
+      amber: 'from-amber-400 to-yellow-500',
+    };
+    return gradients[themeId] || '';
+  };
+
   return (
     <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-100 mb-2">设置</h1>
-          <p className="text-slate-400">配置 AI API 参数和数据存储</p>
+          <h1 className="text-3xl font-bold text-title mb-2">设置</h1>
+          <p className="text-body">配置 AI API 参数和数据存储</p>
         </div>
 
         {/* Success Message */}
@@ -243,17 +295,17 @@ export function Settings() {
         )}
 
         {/* API Configurations Section */}
-        <div className="mb-6 rounded-xl bg-slate-900 border border-slate-800 overflow-hidden">
+        <div className="mb-6 rounded-xl bg-card border border-card overflow-hidden">
           <button
             onClick={() => toggleSection('apis')}
             className="w-full px-6 py-4 flex items-center justify-between text-left"
           >
             <div className="flex items-center gap-3">
-              <Key className="w-5 h-5 text-cyan-400" />
-              <span className="font-medium text-slate-100">API 配置</span>
-              <span className="text-xs text-slate-500">({apiConfigs.length} 个配置)</span>
+              <Key className="w-5 h-5 text-primary" />
+              <span className="font-medium text-title">API 配置</span>
+              <span className="text-xs text-muted">({apiConfigs.length} 个配置)</span>
             </div>
-            {expandedSections.apis ? <ChevronUp className="w-5 h-5 text-slate-400" /> : <ChevronDown className="w-5 h-5 text-slate-400" />}
+            {expandedSections.apis ? <ChevronUp className="w-5 h-5 text-body" /> : <ChevronDown className="w-5 h-5 text-body" />}
           </button>
           
           <AnimatePresence>
@@ -262,37 +314,37 @@ export function Settings() {
                 initial={{ height: 0 }}
                 animate={{ height: 'auto' }}
                 exit={{ height: 0 }}
-                className="border-t border-slate-800"
+                className="border-t border-card"
               >
                 <div className="p-6 space-y-4">
                   {/* API List */}
                   {apiConfigs.map((config) => (
                     <div
                       key={config.id}
-                      className="p-4 rounded-lg bg-slate-800/50 border border-slate-700 flex items-center justify-between"
+                      className="p-4 rounded-lg bg-elevated-50 border border-elevated flex items-center justify-between"
                     >
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium text-slate-200">{config.name}</span>
+                          <span className="font-medium text-heading">{config.name}</span>
                           {config.id === 'default' && (
-                            <span className="px-2 py-0.5 rounded text-xs bg-cyan-500/20 text-cyan-400">默认</span>
+                            <span className="px-2 py-0.5 rounded text-xs bg-grad-from/20 text-primary">默认</span>
                           )}
                         </div>
-                        <div className="text-sm text-slate-500 mt-1">
+                        <div className="text-sm text-muted mt-1">
                           {config.baseUrl} · {config.modelName || '未设置模型'}
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => editApiConfig(config)}
-                          className="p-2 rounded-lg text-slate-400 hover:text-cyan-400 hover:bg-cyan-500/10 transition-colors"
+                          className="p-2 rounded-lg text-body hover:text-primary hover:bg-grad-from/10 transition-colors"
                         >
                           <Settings2 className="w-4 h-4" />
                         </button>
                         {config.id !== 'default' && (
                           <button
                             onClick={() => deleteApiConfig(config.id)}
-                            className="p-2 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                            className="p-2 rounded-lg text-body hover:text-red-400 hover:bg-red-500/10 transition-colors"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -304,7 +356,7 @@ export function Settings() {
                   {/* Add Button */}
                   <button
                     onClick={addApiConfig}
-                    className="w-full py-3 rounded-lg border border-dashed border-slate-600 text-slate-400 hover:text-cyan-400 hover:border-cyan-500/50 hover:bg-cyan-500/5 transition-all flex items-center justify-center gap-2"
+                    className="w-full py-3 rounded-lg border border-dashed border-slate-600 text-body hover:text-primary hover:border-grad-from/50 hover:bg-grad-from/5 transition-all flex items-center justify-center gap-2"
                   >
                     <Plus className="w-4 h-4" />
                     添加 API 配置
@@ -316,16 +368,16 @@ export function Settings() {
         </div>
 
         {/* Function API Mapping Section */}
-        <div className="mb-6 rounded-xl bg-slate-900 border border-slate-800 overflow-hidden">
+        <div className="mb-6 rounded-xl bg-card border border-card overflow-hidden">
           <button
             onClick={() => toggleSection('functions')}
             className="w-full px-6 py-4 flex items-center justify-between text-left"
           >
             <div className="flex items-center gap-3">
               <Settings2 className="w-5 h-5 text-purple-400" />
-              <span className="font-medium text-slate-100">功能 API 分配</span>
+              <span className="font-medium text-title">功能 API 分配</span>
             </div>
-            {expandedSections.functions ? <ChevronUp className="w-5 h-5 text-slate-400" /> : <ChevronDown className="w-5 h-5 text-slate-400" />}
+            {expandedSections.functions ? <ChevronUp className="w-5 h-5 text-body" /> : <ChevronDown className="w-5 h-5 text-body" />}
           </button>
           
           <AnimatePresence>
@@ -334,23 +386,23 @@ export function Settings() {
                 initial={{ height: 0 }}
                 animate={{ height: 'auto' }}
                 exit={{ height: 0 }}
-                className="border-t border-slate-800"
+                className="border-t border-card"
               >
                 <div className="p-6 space-y-4">
                   {Object.entries(FUNCTION_LABELS).map(([key, { label, icon, desc }]) => (
                     <div key={key} className="flex items-start gap-4">
-                      <div className="p-2 rounded-lg bg-slate-800 text-slate-400">
+                      <div className="p-2 rounded-lg bg-elevated text-body">
                         {icon}
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium text-slate-200">{label}</span>
-                          <span className="text-xs text-slate-500">{desc}</span>
+                          <span className="font-medium text-heading">{label}</span>
+                          <span className="text-xs text-muted">{desc}</span>
                         </div>
                         <select
                           value={functionApis[key as keyof FunctionAPIConfig]}
                           onChange={(e) => setFunctionApis(prev => ({ ...prev, [key]: e.target.value }))}
-                          className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-100 text-sm focus:outline-none focus:border-cyan-500/50"
+                          className="w-full px-3 py-2 rounded-lg bg-elevated border border-elevated text-title text-sm focus:outline-none focus:border-grad-from/50"
                         >
                           {apiConfigs.map(config => (
                             <option key={config.id} value={config.id}>{config.name}</option>
@@ -366,16 +418,16 @@ export function Settings() {
         </div>
 
         {/* Local Storage Info Section */}
-        <div className="mb-6 rounded-xl bg-slate-900 border border-slate-800 overflow-hidden">
+        <div className="mb-6 rounded-xl bg-card border border-card overflow-hidden">
           <button
             onClick={() => toggleSection('storage')}
             className="w-full px-6 py-4 flex items-center justify-between text-left"
           >
             <div className="flex items-center gap-3">
               <Database className="w-5 h-5 text-green-400" />
-              <span className="font-medium text-slate-100">本地数据存储</span>
+              <span className="font-medium text-title">本地数据存储</span>
             </div>
-            {expandedSections.storage ? <ChevronUp className="w-5 h-5 text-slate-400" /> : <ChevronDown className="w-5 h-5 text-slate-400" />}
+            {expandedSections.storage ? <ChevronUp className="w-5 h-5 text-body" /> : <ChevronDown className="w-5 h-5 text-body" />}
           </button>
 
           <AnimatePresence>
@@ -384,27 +436,27 @@ export function Settings() {
                 initial={{ height: 0 }}
                 animate={{ height: 'auto' }}
                 exit={{ height: 0 }}
-                className="border-t border-slate-800"
+                className="border-t border-card"
               >
                 <div className="p-6 space-y-4">
-                  <div className="text-sm text-slate-400">
+                  <div className="text-sm text-body">
                     所有学习数据存储在浏览器的 IndexedDB 中，完全本地化，无需云端服务器。
                   </div>
                   <div className="space-y-2 text-sm">
-                    <div className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50">
-                      <span className="text-slate-400">存储方式</span>
-                      <span className="text-slate-200">IndexedDB (浏览器本地)</span>
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-elevated-50">
+                      <span className="text-body">存储方式</span>
+                      <span className="text-heading">IndexedDB (浏览器本地)</span>
                     </div>
-                    <div className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50">
-                      <span className="text-slate-400">API Key 存储</span>
-                      <span className="text-slate-200">localStorage (仅本机)</span>
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-elevated-50">
+                      <span className="text-body">API Key 存储</span>
+                      <span className="text-heading">localStorage (仅本机)</span>
                     </div>
-                    <div className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50">
-                      <span className="text-slate-400">数据库名称</span>
-                      <span className="text-slate-200">StudyAssistantDB</span>
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-elevated-50">
+                      <span className="text-body">数据库名称</span>
+                      <span className="text-heading">StudyAssistantDB</span>
                     </div>
                   </div>
-                  <div className="text-xs text-slate-500">
+                  <div className="text-xs text-muted">
                     提示：清除浏览器数据会删除所有学习记录。建议定期使用浏览器的数据备份功能。
                   </div>
                 </div>
@@ -414,16 +466,16 @@ export function Settings() {
         </div>
 
         {/* Security Section */}
-        <div className="mb-6 rounded-xl bg-slate-900 border border-slate-800 overflow-hidden">
+        <div className="mb-6 rounded-xl bg-card border border-card overflow-hidden">
           <button
             onClick={() => toggleSection('security')}
             className="w-full px-6 py-4 flex items-center justify-between text-left"
           >
             <div className="flex items-center gap-3">
               <Shield className="w-5 h-5 text-orange-400" />
-              <span className="font-medium text-slate-100">数据隔离与安全</span>
+              <span className="font-medium text-title">数据隔离与安全</span>
             </div>
-            {expandedSections.security ? <ChevronUp className="w-5 h-5 text-slate-400" /> : <ChevronDown className="w-5 h-5 text-slate-400" />}
+            {expandedSections.security ? <ChevronUp className="w-5 h-5 text-body" /> : <ChevronDown className="w-5 h-5 text-body" />}
           </button>
           
           <AnimatePresence>
@@ -432,25 +484,25 @@ export function Settings() {
                 initial={{ height: 0 }}
                 animate={{ height: 'auto' }}
                 exit={{ height: 0 }}
-                className="border-t border-slate-800"
+                className="border-t border-card"
               >
                 <div className="p-6 space-y-4">
-                  <div className="flex items-center justify-between p-4 rounded-lg bg-slate-800/50 border border-slate-700">
+                  <div className="flex items-center justify-between p-4 rounded-lg bg-elevated-50 border border-elevated">
                     <div>
-                      <div className="font-medium text-slate-200">课程数据隔离</div>
-                      <div className="text-sm text-slate-500">开启后，每个课程的知识库、错题等数据将完全隔离</div>
+                      <div className="font-medium text-heading">课程数据隔离</div>
+                      <div className="text-sm text-muted">开启后，每个课程的知识库、错题等数据将完全隔离</div>
                     </div>
                     <button
                       onClick={() => setDataIsolation(!dataIsolation)}
-                      className={`relative w-12 h-6 rounded-full transition-colors ${dataIsolation ? 'bg-cyan-500' : 'bg-slate-600'}`}
+                      className={`relative w-12 h-6 rounded-full transition-colors ${dataIsolation ? 'bg-grad-from' : 'bg-slate-600'}`}
                     >
                       <span className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${dataIsolation ? 'left-7' : 'left-1'}`} />
                     </button>
                   </div>
                   
-                  <div className="text-sm text-slate-400 space-y-2">
+                  <div className="text-sm text-body space-y-2">
                     <p>数据隔离机制说明：</p>
-                    <ul className="list-disc list-inside space-y-1 text-slate-500">
+                    <ul className="list-disc list-inside space-y-1 text-muted">
                       <li>每个课程拥有独立的知识库文档</li>
                       <li>错题本按课程分离，避免混淆</li>
                       <li>学习记录和统计按课程独立计算</li>
@@ -464,18 +516,126 @@ export function Settings() {
           </AnimatePresence>
         </div>
 
+        {/* Theme Section */}
+        <div className="mb-6 rounded-xl bg-card border border-card overflow-hidden">
+          <div className="px-6 py-4 flex items-center gap-3 border-b border-card">
+            <Palette className="w-5 h-5 text-accent" />
+            <span className="font-medium text-title">主题配色</span>
+          </div>
+          <div className="p-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {(Object.entries(THEME_LABELS) as [ThemeId, string][]).map(([id, label]) => (
+                <button
+                  key={id}
+                  onClick={() => setTheme(id)}
+                  className={`relative p-4 rounded-xl border-2 transition-all ${
+                    theme === id
+                      ? 'border-accent bg-accent-subtle'
+                      : 'border-elevated hover-border-elevated bg-elevated-50'
+                  }`}
+                >
+                  {id === 'custom' ? (
+                    <div className="h-3 rounded-full mb-3"
+                      style={{ background: 'conic-gradient(red, yellow, lime, cyan, blue, magenta, red)' }}
+                    />
+                  ) : (
+                    <div className={`h-3 rounded-full mb-3 bg-gradient-to-r ${getThemePreviewGradient(id)}`} />
+                  )}
+                  <div className="text-sm font-medium text-heading">{label}</div>
+                  {theme === id && (
+                    <CheckCircle className="absolute top-2 right-2 w-4 h-4 text-accent" />
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {/* Custom color editor */}
+            {theme === 'custom' && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="mt-6 pt-6 border-t border-card space-y-4"
+              >
+                <p className="text-sm text-body">输入 RGB 值（用空格分隔，如 34 211 238）</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <ColorInput
+                    label="主色调 (文本/图标)"
+                    value={editCustom.a1}
+                    onChange={(v) => setEditCustom(p => ({ ...p, a1: v }))}
+                  />
+                  <ColorInput
+                    label="辅助色 (文本/图标)"
+                    value={editCustom.a2}
+                    onChange={(v) => setEditCustom(p => ({ ...p, a2: v }))}
+                  />
+                  <ColorInput
+                    label="渐变起始 / 按钮色"
+                    value={editCustom.g1}
+                    onChange={(v) => setEditCustom(p => ({ ...p, g1: v }))}
+                  />
+                  <ColorInput
+                    label="渐变结束色"
+                    value={editCustom.g2}
+                    onChange={(v) => setEditCustom(p => ({ ...p, g2: v }))}
+                  />
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setCustomColors(editCustom)}
+                    className="px-4 py-2 rounded-lg bg-gradient-to-r from-grad-from to-grad-to text-white font-medium text-sm"
+                  >
+                    应用自定义配色
+                  </button>
+                  <button
+                    onClick={() => { setTheme('ocean'); setEditCustom(customColors); }}
+                    className="px-4 py-2 rounded-lg bg-elevated text-label text-sm hover-bg-hover"
+                  >
+                    重置
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Background Mode Toggle */}
+            <div className="mt-6 pt-6 border-t border-card">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="font-medium text-heading">背景模式</div>
+                  <div className="text-sm text-body mt-0.5">
+                    {bgMode === 'dark' ? '深色背景' : '米白浅色背景'}
+                  </div>
+                </div>
+                <button
+                  onClick={() => setBgMode(bgMode === 'dark' ? 'light' : 'dark')}
+                  className={`relative w-14 h-7 rounded-full transition-colors ${
+                    bgMode === 'light' ? 'bg-grad-from' : 'bg-elevated'
+                  }`}
+                >
+                  <span
+                    className={`absolute top-0.5 w-6 h-6 rounded-full bg-white shadow transition-transform flex items-center justify-center text-xs ${
+                      bgMode === 'light' ? 'left-7' : 'left-0.5'
+                    }`}
+                  >
+                    {bgMode === 'light' ? '☀' : '☾'}
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Actions */}
         <div className="flex gap-4">
           <button
             onClick={handleSave}
-            className="flex-1 px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-medium flex items-center justify-center gap-2 hover:opacity-90 transition-opacity"
+            className="flex-1 px-6 py-3 rounded-xl bg-gradient-to-r from-grad-from to-grad-to text-white font-medium flex items-center justify-center gap-2 hover:opacity-90 transition-opacity"
           >
             <Save className="w-5 h-5" />
             保存设置
           </button>
           <button
             onClick={handleClear}
-            className="px-6 py-3 rounded-xl bg-slate-800 text-slate-300 font-medium flex items-center gap-2 hover:bg-slate-700 transition-colors"
+            className="px-6 py-3 rounded-xl bg-elevated text-label font-medium flex items-center gap-2 hover-bg-hover transition-colors"
           >
             <Trash2 className="w-5 h-5" />
             清除
@@ -488,15 +648,15 @@ export function Settings() {
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="w-full max-w-lg rounded-xl bg-slate-900 border border-slate-800 p-6 space-y-4"
+              className="w-full max-w-lg rounded-xl bg-card border border-card p-6 space-y-4"
             >
-              <h3 className="text-lg font-medium text-slate-100">
+              <h3 className="text-lg font-medium text-title">
                 {apiConfigs.find(c => c.id === editingConfig.id) ? '编辑 API 配置' : '添加 API 配置'}
               </h3>
               
               <div className="space-y-4">
                 <div>
-                  <label className="flex items-center gap-2 text-sm font-medium text-slate-300 mb-2">
+                  <label className="flex items-center gap-2 text-sm font-medium text-label mb-2">
                     <Hash className="w-4 h-4" />
                     配置名称
                   </label>
@@ -505,12 +665,12 @@ export function Settings() {
                     value={editingConfig.name}
                     onChange={(e) => setEditingConfig({ ...editingConfig, name: e.target.value })}
                     placeholder="例如：DeepSeek 主账号"
-                    className="w-full px-4 py-3 rounded-lg bg-slate-800 border border-slate-700 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500/50"
+                    className="w-full px-4 py-3 rounded-lg bg-elevated border border-elevated text-title placeholder-slate-500 focus:outline-none focus:border-grad-from/50"
                   />
                 </div>
 
                 <div>
-                  <label className="flex items-center gap-2 text-sm font-medium text-slate-300 mb-2">
+                  <label className="flex items-center gap-2 text-sm font-medium text-label mb-2">
                     <Key className="w-4 h-4" />
                     API Key
                   </label>
@@ -519,12 +679,12 @@ export function Settings() {
                     value={editingConfig.apiKey}
                     onChange={(e) => setEditingConfig({ ...editingConfig, apiKey: e.target.value })}
                     placeholder="sk-..."
-                    className="w-full px-4 py-3 rounded-lg bg-slate-800 border border-slate-700 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500/50"
+                    className="w-full px-4 py-3 rounded-lg bg-elevated border border-elevated text-title placeholder-slate-500 focus:outline-none focus:border-grad-from/50"
                   />
                 </div>
 
                 <div>
-                  <label className="flex items-center gap-2 text-sm font-medium text-slate-300 mb-2">
+                  <label className="flex items-center gap-2 text-sm font-medium text-label mb-2">
                     <Server className="w-4 h-4" />
                     API Base URL
                   </label>
@@ -533,12 +693,12 @@ export function Settings() {
                     value={editingConfig.baseUrl}
                     onChange={(e) => setEditingConfig({ ...editingConfig, baseUrl: e.target.value })}
                     placeholder="https://api.deepseek.com"
-                    className="w-full px-4 py-3 rounded-lg bg-slate-800 border border-slate-700 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500/50"
+                    className="w-full px-4 py-3 rounded-lg bg-elevated border border-elevated text-title placeholder-slate-500 focus:outline-none focus:border-grad-from/50"
                   />
                 </div>
 
                 <div>
-                  <label className="flex items-center gap-2 text-sm font-medium text-slate-300 mb-2">
+                  <label className="flex items-center gap-2 text-sm font-medium text-label mb-2">
                     <Hash className="w-4 h-4" />
                     模型名称
                   </label>
@@ -547,15 +707,15 @@ export function Settings() {
                     value={editingConfig.modelName}
                     onChange={(e) => setEditingConfig({ ...editingConfig, modelName: e.target.value })}
                     placeholder="例如：deepseek-chat、gpt-4、claude-3-opus..."
-                    className="w-full px-4 py-3 rounded-lg bg-slate-800 border border-slate-700 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500/50"
+                    className="w-full px-4 py-3 rounded-lg bg-elevated border border-elevated text-title placeholder-slate-500 focus:outline-none focus:border-grad-from/50"
                   />
-                  <p className="mt-1 text-xs text-slate-500">
+                  <p className="mt-1 text-xs text-muted">
                     填写官方文档中的模型名称，如 deepseek-chat、gpt-4、claude-3-opus-20240229 等
                   </p>
                 </div>
 
                 <div>
-                  <label className="flex items-center gap-2 text-sm font-medium text-slate-300 mb-2">
+                  <label className="flex items-center gap-2 text-sm font-medium text-label mb-2">
                     <Thermometer className="w-4 h-4" />
                     Temperature
                   </label>
@@ -567,14 +727,14 @@ export function Settings() {
                       step="0.1"
                       value={editingConfig.temperature}
                       onChange={(e) => setEditingConfig({ ...editingConfig, temperature: parseFloat(e.target.value) })}
-                      className="flex-1 h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-500"
+                      className="flex-1 h-2 bg-elevated rounded-lg appearance-none cursor-pointer accent-grad-from"
                     />
-                    <span className="w-12 text-right text-slate-300">{editingConfig.temperature}</span>
+                    <span className="w-12 text-right text-label">{editingConfig.temperature}</span>
                   </div>
                 </div>
 
                 <div>
-                  <label className="flex items-center gap-2 text-sm font-medium text-slate-300 mb-2">
+                  <label className="flex items-center gap-2 text-sm font-medium text-label mb-2">
                     <Hash className="w-4 h-4" />
                     Max Tokens
                   </label>
@@ -584,7 +744,7 @@ export function Settings() {
                     max="32000"
                     value={editingConfig.maxTokens}
                     onChange={(e) => setEditingConfig({ ...editingConfig, maxTokens: parseInt(e.target.value) })}
-                    className="w-full px-4 py-3 rounded-lg bg-slate-800 border border-slate-700 text-slate-100 focus:outline-none focus:border-cyan-500/50"
+                    className="w-full px-4 py-3 rounded-lg bg-elevated border border-elevated text-title focus:outline-none focus:border-grad-from/50"
                   />
                 </div>
               </div>
@@ -592,13 +752,13 @@ export function Settings() {
               <div className="flex gap-3 pt-4">
                 <button
                   onClick={saveApiConfig}
-                  className="flex-1 px-4 py-2 rounded-lg bg-cyan-500 text-white font-medium hover:bg-cyan-600 transition-colors"
+                  className="flex-1 px-4 py-2 rounded-lg bg-grad-from text-white font-medium hover:bg-grad-from/80 transition-colors"
                 >
                   保存
                 </button>
                 <button
                   onClick={() => { setIsEditing(false); setEditingConfig(null); setError(''); }}
-                  className="px-4 py-2 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors"
+                  className="px-4 py-2 rounded-lg bg-elevated text-label hover-bg-hover transition-colors"
                 >
                   取消
                 </button>
@@ -608,12 +768,12 @@ export function Settings() {
         )}
 
         {/* Author Footer */}
-        <div className="mt-8 pt-6 border-t border-slate-800 text-center text-sm text-slate-600">
+        <div className="mt-8 pt-6 border-t border-card text-center text-sm text-foot">
           <p>
             作者：阿刀 |{' '}
-            <a href="https://zjuhechao.github.io/" target="_blank" rel="noopener noreferrer" className="text-cyan-600 hover:text-cyan-500">个人空间</a> |{' '}
-            GitHub: <a href="https://github.com/zjuhechao" target="_blank" rel="noopener noreferrer" className="text-cyan-600 hover:text-cyan-500">zjuhechao</a> |{' '}
-            <a href="mailto:3230101238@zju.edu.cn" className="text-cyan-600 hover:text-cyan-500">3230101238@zju.edu.cn</a>
+            <a href="https://zjuhechao.github.io/" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary">个人空间</a> |{' '}
+            GitHub: <a href="https://github.com/zjuhechao" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary">zjuhechao</a> |{' '}
+            <a href="mailto:3230101238@zju.edu.cn" className="text-primary hover:text-primary">3230101238@zju.edu.cn</a>
           </p>
         </div>
       </div>

@@ -186,8 +186,8 @@ export function WrongQuestions() {
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-100 mb-2">错题本</h1>
-          <p className="text-slate-400">追踪错题，针对性训练，提升学习效果</p>
+          <h1 className="text-3xl font-bold text-title mb-2">错题本</h1>
+          <p className="text-body">追踪错题，针对性训练，提升学习效果</p>
         </div>
 
         {/* Error */}
@@ -214,21 +214,21 @@ export function WrongQuestions() {
           <>
             {/* Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              <div className="p-4 rounded-xl bg-slate-900 border border-slate-800">
-                <div className="text-2xl font-bold text-slate-100">{stats.total}</div>
-                <div className="text-sm text-slate-500">总错题数</div>
+              <div className="p-4 rounded-xl bg-card border border-card">
+                <div className="text-2xl font-bold text-title">{stats.total}</div>
+                <div className="text-sm text-muted">总错题数</div>
               </div>
-              <div className="p-4 rounded-xl bg-slate-900 border border-slate-800">
+              <div className="p-4 rounded-xl bg-card border border-card">
                 <div className="text-2xl font-bold text-orange-400">{stats.unmastered}</div>
-                <div className="text-sm text-slate-500">待掌握</div>
+                <div className="text-sm text-muted">待掌握</div>
               </div>
-              <div className="p-4 rounded-xl bg-slate-900 border border-slate-800">
+              <div className="p-4 rounded-xl bg-card border border-card">
                 <div className="text-2xl font-bold text-green-400">{stats.mastered}</div>
-                <div className="text-sm text-slate-500">已掌握</div>
+                <div className="text-sm text-muted">已掌握</div>
               </div>
-              <div className="p-4 rounded-xl bg-slate-900 border border-slate-800">
+              <div className="p-4 rounded-xl bg-card border border-card">
                 <div className="text-2xl font-bold text-red-400">{stats.highFrequency}</div>
-                <div className="text-sm text-slate-500">高频错题</div>
+                <div className="text-sm text-muted">高频错题</div>
               </div>
             </div>
 
@@ -237,7 +237,7 @@ export function WrongQuestions() {
               <button
                 onClick={startWrongPractice}
                 disabled={stats.unmastered === 0}
-                className="px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-medium disabled:opacity-50 flex items-center gap-2"
+                className="px-6 py-3 rounded-xl bg-gradient-to-r from-grad-from to-grad-to text-white font-medium disabled:opacity-50 flex items-center gap-2"
               >
                 <RefreshCcw className="w-5 h-5" />
                 错题重练 ({stats.unmastered})
@@ -245,7 +245,7 @@ export function WrongQuestions() {
               <button
                 onClick={generateTargetedPractice}
                 disabled={isGenerating || stats.unmastered === 0}
-                className="px-6 py-3 rounded-xl bg-slate-800 text-slate-200 font-medium disabled:opacity-50 flex items-center gap-2 hover:bg-slate-700"
+                className="px-6 py-3 rounded-xl bg-elevated text-heading font-medium disabled:opacity-50 flex items-center gap-2 hover-bg-hover"
               >
                 {isGenerating ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
@@ -259,12 +259,12 @@ export function WrongQuestions() {
             {/* Wrong Questions List */}
             {isLoading ? (
               <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-8 h-8 text-cyan-400 animate-spin" />
+                <Loader2 className="w-8 h-8 text-primary animate-spin" />
               </div>
             ) : stats.unmastered === 0 ? (
               <div className="text-center py-12">
                 <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                <p className="text-slate-400">太棒了！没有待掌握的错题</p>
+                <p className="text-body">太棒了！没有待掌握的错题</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -276,7 +276,7 @@ export function WrongQuestions() {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.05 }}
-                      className="p-4 rounded-xl bg-slate-900 border border-slate-800"
+                      className="p-4 rounded-xl bg-card border border-card"
                     >
                       <div className="flex items-start gap-4">
                         <div className="w-10 h-10 rounded-lg bg-red-500/10 flex items-center justify-center flex-shrink-0">
@@ -284,17 +284,17 @@ export function WrongQuestions() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-2">
-                            <span className="text-sm text-slate-500">
+                            <span className="text-sm text-muted">
                               错误 {wq.wrong_count || 0} 次
                             </span>
                             {wq.question?.knowledge_point && (
-                              <span className="px-2 py-0.5 rounded text-xs bg-slate-800 text-slate-400">
+                              <span className="px-2 py-0.5 rounded text-xs bg-elevated text-body">
                                 {wq.question.knowledge_point}
                               </span>
                             )}
                           </div>
-                          <p className="text-slate-200 mb-2">{wq.question?.question_text}</p>
-                          <p className="text-sm text-slate-500">
+                          <p className="text-heading mb-2">{wq.question?.question_text}</p>
+                          <p className="text-sm text-muted">
                             正确答案: <span className="text-green-400">{wq.question?.correct_answer}</span>
                           </p>
                         </div>
@@ -313,24 +313,24 @@ export function WrongQuestions() {
           </>
         ) : (
           /* Practice Mode */
-          <div className="p-6 rounded-xl bg-slate-900 border border-slate-800">
+          <div className="p-6 rounded-xl bg-card border border-card">
             {/* Progress */}
             <div className="flex items-center justify-between mb-6">
-              <span className="text-slate-400">
+              <span className="text-body">
                 题目 {currentIndex + 1} / {practiceQuestions.length}
               </span>
               <button
                 onClick={() => setIsPracticing(false)}
-                className="text-slate-400 hover:text-slate-200"
+                className="text-body hover-text-heading"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Progress Bar */}
-            <div className="w-full h-2 bg-slate-800 rounded-full mb-6">
+            <div className="w-full h-2 bg-elevated rounded-full mb-6">
               <div
-                className="h-full bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full transition-all"
+                className="h-full bg-gradient-to-r from-grad-from to-grad-to rounded-full transition-all"
                 style={{ width: `${((currentIndex + 1) / practiceQuestions.length) * 100}%` }}
               />
             </div>
@@ -351,7 +351,7 @@ export function WrongQuestions() {
                        currentQuestion.question_type === 'judgment' ? '判断题' : '简答题'}
                     </span>
                   </div>
-                  <p className="text-lg text-slate-100 mb-4">{currentQuestion.question_text}</p>
+                  <p className="text-lg text-title mb-4">{currentQuestion.question_text}</p>
 
                   {/* Options */}
                   {currentQuestion.question_type === 'choice' && currentQuestion.options && (
@@ -365,8 +365,8 @@ export function WrongQuestions() {
                           disabled={showResult}
                           className={`w-full p-3 rounded-lg border text-left transition-colors ${
                             selectedAnswer === optionLetter
-                              ? 'border-cyan-500 bg-cyan-500/10'
-                              : 'border-slate-700 hover:border-slate-600'
+                              ? 'border-grad-from bg-grad-from/10'
+                              : 'border-elevated hover-border-elevated'
                           } ${showResult && optionLetter === currentQuestion.correct_answer ? 'border-green-500 bg-green-500/10' : ''}`}
                         >
                           {optionLetter}. {stripOptionPrefix(option)}
@@ -386,8 +386,8 @@ export function WrongQuestions() {
                           disabled={showResult}
                           className={`flex-1 p-3 rounded-lg border text-center transition-colors font-medium ${
                             selectedAnswer === label
-                              ? 'border-cyan-500 bg-cyan-500/10 text-cyan-400'
-                              : 'border-slate-700 hover:border-slate-600 text-slate-300'
+                              ? 'border-grad-from bg-grad-from/10 text-primary'
+                              : 'border-elevated hover-border-elevated text-label'
                           } ${showResult && label === currentQuestion.correct_answer ? 'border-green-500 bg-green-500/10 text-green-400' : ''}
                           ${showResult && label !== currentQuestion.correct_answer && selectedAnswer === label ? 'border-red-500 bg-red-500/10 text-red-400' : ''}`}
                         >
@@ -406,7 +406,7 @@ export function WrongQuestions() {
                       onChange={(e) => setSelectedAnswer(e.target.value)}
                       disabled={showResult}
                       placeholder="请输入答案..."
-                      className="w-full px-4 py-3 rounded-lg bg-slate-800 border border-slate-700 text-slate-100 disabled:opacity-50"
+                      className="w-full px-4 py-3 rounded-lg bg-elevated border border-elevated text-title disabled:opacity-50"
                     />
                   )}
                 </div>
@@ -436,12 +436,12 @@ export function WrongQuestions() {
                       )}
                     </div>
                     {!isCorrect && (
-                      <p className="text-slate-300">
+                      <p className="text-label">
                         正确答案: <span className="text-green-400">{currentQuestion.correct_answer}</span>
                       </p>
                     )}
                     {currentQuestion.explanation && (
-                      <p className="text-slate-400 text-sm mt-2">{currentQuestion.explanation}</p>
+                      <p className="text-body text-sm mt-2">{currentQuestion.explanation}</p>
                     )}
                   </motion.div>
                 )}
@@ -452,14 +452,14 @@ export function WrongQuestions() {
                     <button
                       onClick={handleSubmitAnswer}
                       disabled={!selectedAnswer}
-                      className="px-6 py-2 rounded-lg bg-cyan-500 text-white font-medium disabled:opacity-50"
+                      className="px-6 py-2 rounded-lg bg-grad-from text-white font-medium disabled:opacity-50"
                     >
                       提交答案
                     </button>
                   ) : (
                     <button
                       onClick={handleNext}
-                      className="px-6 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-medium flex items-center gap-2"
+                      className="px-6 py-2 rounded-lg bg-gradient-to-r from-grad-from to-grad-to text-white font-medium flex items-center gap-2"
                     >
                       {currentIndex < practiceQuestions.length - 1 ? '下一题' : '完成'}
                       <ChevronRight className="w-4 h-4" />

@@ -199,17 +199,17 @@ export function Profile() {
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-100 mb-2">个人中心</h1>
-          <p className="text-slate-400">管理你的学习档案和查看学习统计</p>
+          <h1 className="text-3xl font-bold text-title mb-2">个人中心</h1>
+          <p className="text-body">管理你的学习档案和查看学习统计</p>
         </div>
 
         {/* Profile Card */}
-        <div className="p-6 rounded-2xl bg-gradient-to-r from-cyan-500/10 to-purple-500/10 border border-cyan-500/20 mb-6">
+        <div className="p-6 rounded-2xl bg-gradient-to-r from-grad-from/10 to-grad-to/10 border border-grad-from/20 mb-6">
           <div className="flex items-start gap-6">
             {/* Avatar */}
             <div className="relative">
               <div
-                className="w-24 h-24 rounded-2xl overflow-hidden bg-gradient-to-br from-cyan-500 to-purple-600 flex items-center justify-center cursor-pointer"
+                className="w-24 h-24 rounded-2xl overflow-hidden bg-gradient-to-br from-grad-from to-grad-to flex items-center justify-center cursor-pointer"
                 onClick={() => avatarInputRef.current?.click()}
               >
                 {profile.avatar ? (
@@ -220,9 +220,9 @@ export function Profile() {
               </div>
               <button
                 onClick={() => avatarInputRef.current?.click()}
-                className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center hover:bg-slate-700 transition-colors"
+                className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-elevated border border-elevated flex items-center justify-center hover-bg-hover transition-colors"
               >
-                <Camera className="w-4 h-4 text-cyan-400" />
+                <Camera className="w-4 h-4 text-primary" />
               </button>
               <input
                 ref={avatarInputRef}
@@ -241,27 +241,27 @@ export function Profile() {
                     type="text"
                     value={editForm.nickname}
                     onChange={(e) => setEditForm({ ...editForm, nickname: e.target.value })}
-                    className="px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-100"
+                    className="px-3 py-2 rounded-lg bg-elevated border border-elevated text-title"
                     placeholder="昵称"
                   />
                   <input
                     type="email"
                     value={editForm.email}
                     onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                    className="px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-slate-100"
+                    className="px-3 py-2 rounded-lg bg-elevated border border-elevated text-title"
                     placeholder="邮箱"
                   />
                   <div className="flex gap-2">
                     <button
                       onClick={handleSave}
-                      className="px-4 py-2 rounded-lg bg-cyan-500 text-white text-sm"
+                      className="px-4 py-2 rounded-lg bg-grad-from text-white text-sm"
                     >
                       <Save className="w-4 h-4 inline mr-1" />
                       保存
                     </button>
                     <button
                       onClick={() => setIsEditing(false)}
-                      className="px-4 py-2 rounded-lg bg-slate-700 text-slate-300 text-sm"
+                      className="px-4 py-2 rounded-lg bg-hover-bg text-label text-sm"
                     >
                       <X className="w-4 h-4 inline mr-1" />
                       取消
@@ -271,8 +271,8 @@ export function Profile() {
               ) : (
                 <>
                   <div className="flex items-center gap-3 mb-2">
-                    <h2 className="text-2xl font-bold text-slate-100">{profile.nickname}</h2>
-                    <span className="px-2 py-1 rounded-full bg-cyan-500/20 text-cyan-400 text-xs">
+                    <h2 className="text-2xl font-bold text-title">{profile.nickname}</h2>
+                    <span className="px-2 py-1 rounded-full bg-grad-from/20 text-primary text-xs">
                       {getLevelTitle(profile.level)}
                     </span>
                     <button
@@ -280,28 +280,28 @@ export function Profile() {
                         setEditForm({ nickname: profile.nickname, email: profile.email });
                         setIsEditing(true);
                       }}
-                      className="p-1 rounded text-slate-400 hover:text-slate-200"
+                      className="p-1 rounded text-body hover-text-heading"
                     >
                       <Edit2 className="w-4 h-4" />
                     </button>
                   </div>
-                  <p className="text-slate-400 text-sm mb-4">{profile.email || '未设置邮箱'}</p>
+                  <p className="text-body text-sm mb-4">{profile.email || '未设置邮箱'}</p>
 
                   {/* Level Progress */}
                   <div className="mb-4">
                     <div className="flex items-center justify-between text-sm mb-1">
-                      <span className="text-slate-400">等级 {profile.level}</span>
-                      <span className="text-slate-500">{profile.exp % 100}/100 EXP</span>
+                      <span className="text-body">等级 {profile.level}</span>
+                      <span className="text-muted">{profile.exp % 100}/100 EXP</span>
                     </div>
-                    <div className="w-full h-2 bg-slate-800 rounded-full">
+                    <div className="w-full h-2 bg-elevated rounded-full">
                       <div
-                        className="h-full bg-gradient-to-r from-cyan-500 to-purple-500 rounded-full"
+                        className="h-full bg-gradient-to-r from-grad-from to-grad-to rounded-full"
                         style={{ width: `${(profile.exp % 100)}%` }}
                       />
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-4 text-sm text-slate-400">
+                  <div className="flex items-center gap-4 text-sm text-body">
                     <span className="flex items-center gap-1">
                       <Calendar className="w-4 h-4" />
                       加入 {new Date(profile.joinDate).toLocaleDateString()}
@@ -319,85 +319,85 @@ export function Profile() {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <div className="p-4 rounded-xl bg-slate-900 border border-slate-800">
-            <div className="flex items-center gap-2 text-slate-400 text-sm mb-1">
+          <div className="p-4 rounded-xl bg-card border border-card">
+            <div className="flex items-center gap-2 text-body text-sm mb-1">
               <Clock className="w-4 h-4" />
               学习时长
             </div>
-            <div className="text-2xl font-bold text-slate-100">{profile.totalStudyTime}</div>
-            <div className="text-xs text-slate-500">分钟</div>
+            <div className="text-2xl font-bold text-title">{profile.totalStudyTime}</div>
+            <div className="text-xs text-muted">分钟</div>
           </div>
-          <div className="p-4 rounded-xl bg-slate-900 border border-slate-800">
-            <div className="flex items-center gap-2 text-slate-400 text-sm mb-1">
+          <div className="p-4 rounded-xl bg-card border border-card">
+            <div className="flex items-center gap-2 text-body text-sm mb-1">
               <Target className="w-4 h-4" />
               答题数
             </div>
-            <div className="text-2xl font-bold text-slate-100">{profile.totalQuestions}</div>
-            <div className="text-xs text-slate-500">道</div>
+            <div className="text-2xl font-bold text-title">{profile.totalQuestions}</div>
+            <div className="text-xs text-muted">道</div>
           </div>
-          <div className="p-4 rounded-xl bg-slate-900 border border-slate-800">
-            <div className="flex items-center gap-2 text-slate-400 text-sm mb-1">
+          <div className="p-4 rounded-xl bg-card border border-card">
+            <div className="flex items-center gap-2 text-body text-sm mb-1">
               <TrendingUp className="w-4 h-4" />
               正确率
             </div>
             <div className="text-2xl font-bold text-green-400">{profile.correctRate}%</div>
-            <div className="text-xs text-slate-500">平均</div>
+            <div className="text-xs text-muted">平均</div>
           </div>
-          <div className="p-4 rounded-xl bg-slate-900 border border-slate-800">
-            <div className="flex items-center gap-2 text-slate-400 text-sm mb-1">
+          <div className="p-4 rounded-xl bg-card border border-card">
+            <div className="flex items-center gap-2 text-body text-sm mb-1">
               <BookOpen className="w-4 h-4" />
               资料数
             </div>
-            <div className="text-2xl font-bold text-slate-100">{stats.documents}</div>
-            <div className="text-xs text-slate-500">个</div>
+            <div className="text-2xl font-bold text-title">{stats.documents}</div>
+            <div className="text-xs text-muted">个</div>
           </div>
         </div>
 
         {/* Detailed Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Learning Stats */}
-          <div className="p-5 rounded-xl bg-slate-900 border border-slate-800">
-            <h3 className="font-semibold text-slate-100 mb-4 flex items-center gap-2">
-              <Brain className="w-5 h-5 text-cyan-400" />
+          <div className="p-5 rounded-xl bg-card border border-card">
+            <h3 className="font-semibold text-title mb-4 flex items-center gap-2">
+              <Brain className="w-5 h-5 text-primary" />
               学习统计
             </h3>
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-slate-400">练习次数</span>
-                <span className="text-slate-100 font-medium">{stats.sessions} 次</span>
+                <span className="text-body">练习次数</span>
+                <span className="text-title font-medium">{stats.sessions} 次</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-slate-400">题目总数</span>
-                <span className="text-slate-100 font-medium">{stats.questions} 道</span>
+                <span className="text-body">题目总数</span>
+                <span className="text-title font-medium">{stats.questions} 道</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-slate-400">待掌握错题</span>
+                <span className="text-body">待掌握错题</span>
                 <span className="text-red-400 font-medium">{stats.wrongQuestions} 道</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-slate-400">知识库资料</span>
-                <span className="text-slate-100 font-medium">{stats.documents} 个</span>
+                <span className="text-body">知识库资料</span>
+                <span className="text-title font-medium">{stats.documents} 个</span>
               </div>
             </div>
           </div>
 
           {/* Recent Activity */}
-          <div className="p-5 rounded-xl bg-slate-900 border border-slate-800">
-            <h3 className="font-semibold text-slate-100 mb-4 flex items-center gap-2">
+          <div className="p-5 rounded-xl bg-card border border-card">
+            <h3 className="font-semibold text-title mb-4 flex items-center gap-2">
               <CheckCircle className="w-5 h-5 text-green-400" />
               最近活动
             </h3>
             <div className="space-y-3 max-h-48 overflow-y-auto">
               {recentActivity.length === 0 ? (
-                <p className="text-slate-500 text-sm">暂无活动记录</p>
+                <p className="text-muted text-sm">暂无活动记录</p>
               ) : (
                 recentActivity.map((activity, i) => (
                   <div key={i} className="flex items-start gap-3">
-                    <div className="w-2 h-2 rounded-full bg-cyan-400 mt-2" />
+                    <div className="w-2 h-2 rounded-full bg-primary mt-2" />
                     <div>
-                      <p className="text-slate-200 text-sm">{activity.action}</p>
-                      <p className="text-slate-500 text-xs">{activity.detail}</p>
-                      <p className="text-slate-600 text-xs">{activity.date}</p>
+                      <p className="text-heading text-sm">{activity.action}</p>
+                      <p className="text-muted text-xs">{activity.detail}</p>
+                      <p className="text-foot text-xs">{activity.date}</p>
                     </div>
                   </div>
                 ))
@@ -407,12 +407,12 @@ export function Profile() {
         </div>
 
         {/* Author Footer */}
-        <div className="mt-8 pt-6 border-t border-slate-800 text-center text-sm text-slate-600">
+        <div className="mt-8 pt-6 border-t border-card text-center text-sm text-foot">
           <p>
             作者：阿刀 |{' '}
-            <a href="https://zjuhechao.github.io/" target="_blank" rel="noopener noreferrer" className="text-cyan-600 hover:text-cyan-500">个人空间</a> |{' '}
-            GitHub: <a href="https://github.com/zjuhechao" target="_blank" rel="noopener noreferrer" className="text-cyan-600 hover:text-cyan-500">zjuhechao</a> |{' '}
-            <a href="mailto:3230101238@zju.edu.cn" className="text-cyan-600 hover:text-cyan-500">3230101238@zju.edu.cn</a>
+            <a href="https://zjuhechao.github.io/" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary">{' '}个人空间</a> |{' '}
+            GitHub: <a href="https://github.com/zjuhechao" target="_blank" rel="noopener noreferrer" className="text-primary hover:text-primary">zjuhechao</a> |{' '}
+            <a href="mailto:3230101238@zju.edu.cn" className="text-primary hover:text-primary">3230101238@zju.edu.cn</a>
           </p>
         </div>
       </div>

@@ -126,8 +126,8 @@ export function StudyAssistant() {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-100 mb-2">复习助手</h1>
-          <p className="text-slate-400">AI 智能生成复习纲要和学习笔记</p>
+          <h1 className="text-3xl font-bold text-title mb-2">复习助手</h1>
+          <p className="text-body">AI 智能生成复习纲要和学习笔记</p>
         </div>
 
         {/* Error */}
@@ -148,8 +148,8 @@ export function StudyAssistant() {
             onClick={() => setActiveTab('summary')}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               activeTab === 'summary'
-                ? 'bg-cyan-500/20 text-cyan-400'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-grad-from/20 text-primary'
+                : 'text-body hover-text-heading'
             }`}
           >
             <BookOpen className="w-4 h-4 inline mr-2" />
@@ -159,8 +159,8 @@ export function StudyAssistant() {
             onClick={() => setActiveTab('notes')}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               activeTab === 'notes'
-                ? 'bg-purple-500/20 text-purple-400'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-grad-to/20 text-primary-2'
+                : 'text-body hover-text-heading'
             }`}
           >
             <FileText className="w-4 h-4 inline mr-2" />
@@ -171,8 +171,8 @@ export function StudyAssistant() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Panel - Document Selection */}
           <div className="space-y-4">
-            <div className="p-4 rounded-xl bg-slate-900 border border-slate-800">
-              <h3 className="font-medium text-slate-100 mb-4">选择文档（可多选）</h3>
+            <div className="p-4 rounded-xl bg-card border border-card">
+              <h3 className="font-medium text-title mb-4">选择文档（可多选）</h3>
               <div className="space-y-2 max-h-48 overflow-y-auto">
                 {documents.map((doc) => (
                   <div
@@ -186,16 +186,16 @@ export function StudyAssistant() {
                     }}
                     className={`p-3 rounded-lg cursor-pointer transition-colors flex items-center gap-2 ${
                       selectedDocs.includes(doc.id)
-                        ? 'bg-cyan-500/20 border border-cyan-500/50'
-                        : 'bg-slate-800/50 border border-slate-700 hover:bg-slate-800'
+                        ? 'bg-grad-from/20 border border-grad-from/50'
+                        : 'bg-elevated-50 border border-elevated hover-bg-elevated'
                     }`}
                   >
                     <div className={`w-4 h-4 rounded border flex items-center justify-center ${
-                      selectedDocs.includes(doc.id) ? 'bg-cyan-500 border-cyan-500' : 'border-slate-500'
+                      selectedDocs.includes(doc.id) ? 'bg-grad-from border-grad-from' : 'border-slate-500'
                     }`}>
                       {selectedDocs.includes(doc.id) && <CheckCircle className="w-3 h-3 text-white" />}
                     </div>
-                    <span className="text-sm text-slate-200 truncate">{doc.filename}</span>
+                    <span className="text-sm text-heading truncate">{doc.filename}</span>
                   </div>
                 ))}
               </div>
@@ -203,7 +203,7 @@ export function StudyAssistant() {
               <button
                 onClick={handleGenerate}
                 disabled={isGenerating || selectedDocs.length === 0}
-                className="w-full mt-4 px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full mt-4 px-4 py-2 rounded-lg bg-gradient-to-r from-grad-from to-grad-to text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {isGenerating ? (
                   <>
@@ -220,20 +220,20 @@ export function StudyAssistant() {
             </div>
 
             {/* History */}
-            <div className="p-4 rounded-xl bg-slate-900 border border-slate-800">
-              <h3 className="font-medium text-slate-100 mb-4">历史记录</h3>
+            <div className="p-4 rounded-xl bg-card border border-card">
+              <h3 className="font-medium text-title mb-4">历史记录</h3>
               <div className="space-y-2 max-h-64 overflow-y-auto">
                 {currentList.length === 0 ? (
-                  <p className="text-slate-500 text-sm">暂无记录</p>
+                  <p className="text-muted text-sm">暂无记录</p>
                 ) : (
                   currentList.map((item) => (
                     <div
                       key={item.id}
                       onClick={() => setGeneratedContent(item.content)}
-                      className="p-3 rounded-lg bg-slate-800/50 hover:bg-slate-800 cursor-pointer transition-colors"
+                      className="p-3 rounded-lg bg-elevated-50 hover-bg-elevated cursor-pointer transition-colors"
                     >
-                      <p className="text-sm text-slate-200 truncate">{item.title}</p>
-                      <p className="text-xs text-slate-500 mt-1">
+                      <p className="text-sm text-heading truncate">{item.title}</p>
+                      <p className="text-xs text-muted mt-1">
                         {item.created_at ? new Date(item.created_at).toLocaleDateString() : ''}
                       </p>
                     </div>
@@ -245,15 +245,15 @@ export function StudyAssistant() {
 
           {/* Right Panel - Content Display */}
           <div className="lg:col-span-2">
-            <div className="p-6 rounded-xl bg-slate-900 border border-slate-800 min-h-[600px]">
+            <div className="p-6 rounded-xl bg-card border border-card min-h-[600px]">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-medium text-slate-100">
+                <h3 className="font-medium text-title">
                   {activeTab === 'summary' ? '复习纲要' : '学习笔记'}
                 </h3>
                 {generatedContent && (
                   <button
                     onClick={handleExport}
-                    className="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 transition-colors flex items-center gap-1 text-sm"
+                    className="px-3 py-1.5 rounded-lg bg-elevated text-label hover-bg-hover transition-colors flex items-center gap-1 text-sm"
                   >
                     <Download className="w-4 h-4" />
                     导出 Markdown
@@ -271,7 +271,7 @@ export function StudyAssistant() {
                   </ReactMarkdown>
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center h-96 text-slate-500">
+                <div className="flex flex-col items-center justify-center h-96 text-muted">
                   <Sparkles className="w-16 h-16 mb-4 opacity-50" />
                   <p>选择文档并点击生成按钮</p>
                   <p className="text-sm mt-2">AI 将自动分析内容并生成{activeTab === 'summary' ? '复习纲要' : '学习笔记'}</p>

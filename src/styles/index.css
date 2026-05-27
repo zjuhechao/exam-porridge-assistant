@@ -11,17 +11,199 @@
   box-sizing: border-box;
 }
 
+/* ========== 主题配色方案 ========== */
+/* 各主题使用 RGB 分量以便通过 opacity 控制透明度 */
+
+/* 默认变量（:root 放最前面，被后面的 [data-theme] 覆盖） */
 :root {
-  --bg-color: #0f172a;
-  --text-color: #f8fafc;
-  --text-secondary: #94a3b8;
+  --c-a1: 34 211 238;
+  --c-a2: 167 139 250;
+  --c-g1: 6 182 212;
+  --c-g2: 147 51 234;
+  --c-lk: 8 145 178;
+  --c-rg: 6 182 212;
+  --c-tg: 6 182 212;
+  --c-ac: 6 182 212;
+
+  --bg-page: #0f172a;
+  --bg-card: #1e293b;
+  --bg-elevated: #334155;
+  --bg-hover: #475569;
+  --border-card: #1e293b;
+  --border-elevated: #334155;
+  --text-title: #f8fafc;
+  --text-heading: #e2e8f0;
+  --text-label: #cbd5e1;
+  --text-body: #94a3b8;
+  --text-muted: #64748b;
+  --text-foot: #475569;
 }
 
-html.dark,
-[data-theme='dark'] {
-  --bg-color: #0f172a;
-  --text-color: #f8fafc;
-  --text-secondary: #94a3b8;
+/* 极夜蓝（默认）- Cyan/Purple */
+[data-theme="ocean"] {
+  --c-a1: 34 211 238;     /* 主色调文本/图标 (cyan-400) */
+  --c-a2: 167 139 250;    /* 辅助色文本/图标 (purple-400) */
+  --c-g1: 6 182 212;      /* 渐变起始 / 按钮 / 边框 (cyan-500) */
+  --c-g2: 147 51 234;     /* 渐变结束 (purple-600) */
+  --c-lk: 8 145 178;      /* 链接色 (cyan-600) */
+  --c-rg: 6 182 212;      /* 环形焦点 (cyan-500) */
+  --c-tg: 6 182 212;      /* 开关滑块 (cyan-500) */
+  --c-ac: 6 182 212;      /* 滑块强调色 (cyan-500) */
+
+  --bg-page: #0f172a;          /* slate-950 */
+  --bg-card: #1e293b;          /* slate-900 */
+  --bg-elevated: #334155;      /* slate-800 */
+  --bg-hover: #475569;         /* slate-700 */
+  --border-card: #1e293b;      /* slate-800 */
+  --border-elevated: #334155;  /* slate-700 */
+  --text-title: #f8fafc;       /* slate-100 */
+  --text-heading: #e2e8f0;     /* slate-200 */
+  --text-label: #cbd5e1;       /* slate-300 */
+  --text-body: #94a3b8;        /* slate-400 */
+  --text-muted: #64748b;       /* slate-500 */
+  --text-foot: #475569;        /* slate-600 */
+}
+
+/* 翡翠绿 - Emerald/Teal */
+[data-theme="forest"] {
+  --c-a1: 52 211 153;
+  --c-a2: 45 212 191;
+  --c-g1: 16 185 129;
+  --c-g2: 13 148 136;
+  --c-lk: 13 148 136;
+  --c-rg: 16 185 129;
+  --c-tg: 16 185 129;
+  --c-ac: 16 185 129;
+
+  --bg-page: #0a1f14;
+  --bg-card: #132b1f;
+  --bg-elevated: #1a3a28;
+  --bg-hover: #224832;
+  --border-card: #1a3a28;
+  --border-elevated: #224832;
+  --text-title: #ecfdf5;
+  --text-heading: #d1fae5;
+  --text-label: #a7f3d0;
+  --text-body: #6ee7b7;
+  --text-muted: #34d399;
+  --text-foot: #166534;
+}
+
+/* 日落橙 - Orange/Rose */
+[data-theme="sunset"] {
+  --c-a1: 251 146 60;
+  --c-a2: 244 114 182;
+  --c-g1: 249 115 22;
+  --c-g2: 225 29 72;
+  --c-lk: 234 88 12;
+  --c-rg: 249 115 22;
+  --c-tg: 249 115 22;
+  --c-ac: 249 115 22;
+
+  --bg-page: #1a0f0a;
+  --bg-card: #2a1a12;
+  --bg-elevated: #3a2518;
+  --bg-hover: #4a3020;
+  --border-card: #3a2518;
+  --border-elevated: #4a3020;
+  --text-title: #fff7ed;
+  --text-heading: #ffedd5;
+  --text-label: #fed7aa;
+  --text-body: #fdba74;
+  --text-muted: #f97316;
+  --text-foot: #9a3412;
+}
+
+/* 星空紫 - Indigo/Violet */
+[data-theme="starry"] {
+  --c-a1: 129 140 248;
+  --c-a2: 167 139 250;
+  --c-g1: 99 102 241;
+  --c-g2: 124 58 237;
+  --c-lk: 79 70 229;
+  --c-rg: 99 102 241;
+  --c-tg: 99 102 241;
+  --c-ac: 99 102 241;
+
+  --bg-page: #0f0f1a;
+  --bg-card: #1a1a2e;
+  --bg-elevated: #252542;
+  --bg-hover: #30305a;
+  --border-card: #252542;
+  --border-elevated: #30305a;
+  --text-title: #eef2ff;
+  --text-heading: #e0e7ff;
+  --text-label: #c7d2fe;
+  --text-body: #a5b4fc;
+  --text-muted: #818cf8;
+  --text-foot: #3730a3;
+}
+
+/* 樱花粉 - Pink/Fuchsia */
+[data-theme="sakura"] {
+  --c-a1: 244 114 182;
+  --c-a2: 232 121 249;
+  --c-g1: 236 72 153;
+  --c-g2: 192 38 211;
+  --c-lk: 219 39 119;
+  --c-rg: 236 72 153;
+  --c-tg: 236 72 153;
+  --c-ac: 236 72 153;
+
+  --bg-page: #1a0f12;
+  --bg-card: #2a1a1e;
+  --bg-elevated: #3a252a;
+  --bg-hover: #4a3036;
+  --border-card: #3a252a;
+  --border-elevated: #4a3036;
+  --text-title: #fdf2f8;
+  --text-heading: #fce7f3;
+  --text-label: #fbcfe8;
+  --text-body: #f9a8d4;
+  --text-muted: #f472b6;
+  --text-foot: #9d174d;
+}
+
+/* 琥珀金 - Amber/Yellow */
+[data-theme="amber"] {
+  --c-a1: 251 191 36;
+  --c-a2: 250 204 21;
+  --c-g1: 245 158 11;
+  --c-g2: 234 179 8;
+  --c-lk: 217 119 6;
+  --c-rg: 245 158 11;
+  --c-tg: 245 158 11;
+  --c-ac: 245 158 11;
+
+  --bg-page: #1a140a;
+  --bg-card: #2a2012;
+  --bg-elevated: #3a2e18;
+  --bg-hover: #4a3c1e;
+  --border-card: #3a2e18;
+  --border-elevated: #4a3c1e;
+  --text-title: #fffbeb;
+  --text-heading: #fef3c7;
+  --text-label: #fde68a;
+  --text-body: #fcd34d;
+  --text-muted: #fbbf24;
+  --text-foot: #92400e;
+}
+
+/* 浅色背景模式 - 覆盖上面的深色背景变量 */
+/* 放所有 [data-theme] 之后，确保能覆盖主题的深色背景值 */
+[data-bg-mode="light"] {
+  --bg-page: #f7f5f0;
+  --bg-card: #ffffff;
+  --bg-elevated: #ebe7e0;
+  --bg-hover: #e0dbd3;
+  --border-card: #e0dbd3;
+  --border-elevated: #d1cbc2;
+  --text-title: #1c1814;
+  --text-heading: #2e2924;
+  --text-label: #4a443d;
+  --text-body: #6b645c;
+  --text-muted: #9c948a;
+  --text-foot: #b8b0a5;
 }
 
 body {
@@ -30,8 +212,8 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: var(--bg-color);
-  color: var(--text-color);
+  background-color: var(--bg-page);
+  color: var(--text-body);
 }
 
 /* Scrollbar styling */
@@ -41,26 +223,26 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #1e293b;
+  background: var(--bg-elevated);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #475569;
+  background: var(--text-muted);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #64748b;
+  background: var(--text-body);
 }
 
 /* Prose styles for markdown */
 .prose {
-  color: #e2e8f0;
+  color: var(--text-heading);
 }
 
 .prose h1, .prose h2, .prose h3, .prose h4 {
-  color: #f8fafc;
+  color: var(--text-title);
   margin-top: 1.5em;
   margin-bottom: 0.5em;
 }
@@ -80,14 +262,14 @@ body {
 }
 
 .prose code {
-  background: #1e293b;
+  background: var(--bg-elevated);
   padding: 0.2em 0.4em;
   border-radius: 4px;
   font-size: 0.9em;
 }
 
 .prose pre {
-  background: #1e293b;
+  background: var(--bg-elevated);
   padding: 1em;
   border-radius: 8px;
   overflow-x: auto;
@@ -95,17 +277,62 @@ body {
 }
 
 .prose blockquote {
-  border-left: 4px solid #3b82f6;
+  border-left: 4px solid rgb(var(--c-g1));
   padding-left: 1em;
   margin-left: 0;
-  color: #94a3b8;
+  color: var(--text-muted);
 }
 
 .prose a {
-  color: #38bdf8;
+  color: rgb(var(--c-a1));
   text-decoration: none;
 }
 
 .prose a:hover {
   text-decoration: underline;
 }
+
+/* ========== 主题工具类 ========== */
+.text-accent { color: rgb(var(--c-a1)); }
+.text-accent2 { color: rgb(var(--c-a2)); }
+.text-accent-dark { color: rgb(var(--c-g1)); }
+
+.bg-accent-subtle { background-color: rgba(var(--c-g1), 0.1); }
+.bg-accent-med { background-color: rgba(var(--c-g1), 0.2); }
+
+.border-accent { border-color: rgba(var(--c-g1), 0.5); }
+.border-accent-subtle { border-color: rgba(var(--c-g1), 0.2); }
+
+.hover-text-accent:hover { color: rgb(var(--c-a1)); }
+.hover-bg-accent-subtle:hover { background-color: rgba(var(--c-g1), 0.1); }
+.hover-border-accent:hover { border-color: rgba(var(--c-g1), 0.5); }
+
+.ring-accent { --tw-ring-color: rgb(var(--c-rg)); }
+.accent-slider { accent-color: rgb(var(--c-ac)); }
+
+/* 表面色工具类 */
+.bg-page { background-color: var(--bg-page); }
+.bg-card { background-color: var(--bg-card); }
+.bg-elevated { background-color: var(--bg-elevated); }
+.bg-hover-bg { background-color: var(--bg-hover); }
+.border-card { border-color: var(--border-card); }
+.border-elevated { border-color: var(--border-elevated); }
+.text-title { color: var(--text-title); }
+.text-heading { color: var(--text-heading); }
+.text-label { color: var(--text-label); }
+.text-body { color: var(--text-body); }
+.text-muted { color: var(--text-muted); }
+.text-foot { color: var(--text-foot); }
+
+.hover-bg-elevated:hover { background-color: var(--bg-elevated); }
+.hover-bg-elevated-50:hover { background-color: color-mix(in srgb, var(--bg-elevated) 50%, transparent); }
+.hover-bg-hover:hover { background-color: var(--bg-hover); }
+.hover-border-elevated:hover { border-color: var(--border-elevated); }
+.hover-text-heading:hover { color: var(--text-heading); }
+.hover-text-title:hover { color: var(--text-title); }
+.hover-text-body:hover { color: var(--text-body); }
+
+/* 半透明变体（使用 color-mix 现代 CSS） */
+.bg-card-50 { background-color: color-mix(in srgb, var(--bg-card) 50%, transparent); }
+.bg-elevated-50 { background-color: color-mix(in srgb, var(--bg-elevated) 50%, transparent); }
+.border-elevated-50 { border-color: color-mix(in srgb, var(--bg-elevated) 50%, transparent); }
