@@ -21,11 +21,13 @@ export function parseQuestionsLocally(content: string): GeneratedQuestion[] {
 
 // 检测是否为结构化题目内容
 export function isStructuredContent(content: string): boolean {
+  // 检查分隔符格式
+  const hasDelimiter = /^[-=*_]{3,}$/m.test(content);
   // 检查是否有题型标题 + 题号 + 答案标记
   const hasSection = /[一二三四五六七八九十]+[、.．)]\s*(选择题|判断题|填空题|简答题|问答题)/.test(content);
   const hasNumber = /\d+[、.．)）]\s*\S+/.test(content);
   const hasAnswer = /(答案|正确答案|参考答案)[：:]\s*\S/.test(content);
-  return hasSection || (hasNumber && hasAnswer);
+  return hasDelimiter || hasSection || (hasNumber && hasAnswer);
 }
 
 interface Section {
@@ -89,42 +91,63 @@ function splitIntoSections(content: string): Section[] {
   return sections;
 }
 
-// 按题号拆分为独立的题块
-function splitIntoQuestions(body: string): string[] {
-  const blocks: string[] = [];
-  // 匹配题号：1. 1) 1、 （1） (1)
-  const questionStart = /^(\d+)[、.．)）]\s*/m;
-  let lastIndex = -1;
-  let lastMatch: string | null = null;
+// 分隔符检测：--- === ___ *** 单独一行
+const DELIMITER_RE = /^[-=*_]{3,}$/;
 
+// 按题号或分隔符拆分为独立的题块
+function splitIntoQuestions(body: string): string[] {
   const lines = body.split('\n');
-  for (let i = 0; i < lines.length; i++) {
-    const match = lines[i].match(questionStart);
-    if (match) {
-      if (lastIndex >= 0) {
-        blocks.push(lastMatch!);
-      }
-      lastIndex = i;
-      lastMatch = lines.slice(i).join('\n');
-    } else if (lastIndex >= 0) {
-      // 继续累积
-      if (lastMatch) {
-        const idx = lastMatch.indexOf(lines[i]);
-        if (idx >= 0) {
-          // This shouldn't happen with slice, but just in case
+
+  // 检查是否有分隔符
+  const hasDelimiter = lines.some(l => DELIMITER_RE.test(l.trim()));
+
+  if (hasDelimiter) {
+    // 按分隔符分割
+    const blocks: string[] = [];
+    let current: string[] = [];
+    for (const line of lines) {
+      if (DELIMITER_RE.test(line.trim())) {
+        if (current.length > 0) {
+          blocks.push(current.join('\n').trim());
+          current = [];
         }
+      } else {
+        current.push(line);
       }
     }
-  }
-  if (lastMatch) blocks.push(lastMatch);
-
-  // 如果按题号没拆开，尝试用空行分段
-  if (blocks.length === 0) {
-    const paragraphs = body.split(/\n\s*\n/).filter(p => p.trim().length > 0);
-    return paragraphs;
+    if (current.length > 0) blocks.push(current.join('\n').trim());
+    return blocks.filter(b => b.length > 0);
   }
 
-  return blocks;
+  // 无分隔符 → 按题号分割（修复原版跨题 bug）
+  const blocks: string[] = [];
+  const questionStart = /^\d+[、.．)）]\s/;
+  let currentBlock: string[] = [];
+  let foundFirst = false;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    const isQuestionStart = questionStart.test(trimmed);
+
+    if (isQuestionStart) {
+      if (foundFirst && currentBlock.length > 0) {
+        blocks.push(currentBlock.join('\n').trim());
+        currentBlock = [];
+      }
+      foundFirst = true;
+    }
+    currentBlock.push(line);
+  }
+  if (currentBlock.length > 0) {
+    blocks.push(currentBlock.join('\n').trim());
+  }
+
+  // 如果还是没拆开（无双题号），用空行分段
+  if (blocks.length <= 1 && !foundFirst) {
+    return body.split(/\n\s*\n/).filter(p => p.trim().length > 0);
+  }
+
+  return blocks.filter(b => b.length > 0);
 }
 
 // 解析单个题目块
