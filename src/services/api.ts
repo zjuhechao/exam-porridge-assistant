@@ -509,6 +509,138 @@ export async function parseQuestionsFromImages(
   return { questions: deduplicated, raw: lastRaw };
 }
 
+// CORS 代理列表（按优先级）
+const CORS_PROXIES = [
+  (url: string) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+  (url: string) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+];
+
+// 从 HTML 中提取正文文本
+function extractTextFromHTML(html: string): { title: string; content: string } {
+  // 提取标题
+  const titleMatch = html.match(/<title[^>]*>([^<]*)<\/title>/i);
+  const title = titleMatch ? titleMatch[1].trim() : '';
+
+  // 提取 meta description
+  const descMatch = html.match(/<meta\s+name=["']description["'][^>]*content=["']([^"']*)["']/i);
+  const description = descMatch ? descMatch[1].trim() : '';
+
+  // 移除非内容标签
+  let text = html
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, ' ')
+    .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, ' ')
+    .replace(/<header[^>]*>[\s\S]*?<\/header>/gi, ' ')
+    .replace(/<noscript[^>]*>[\s\S]*?<\/noscript>/gi, ' ')
+    .replace(/<svg[^>]*>[\s\S]*?<\/svg>/gi, ' ')
+    .replace(/<form[^>]*>[\s\S]*?<\/form>/gi, ' ')
+    // 替换块级标签为换行
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|div|h[1-6]|li|tr|blockquote|pre|section|article|table|ul|ol)[^>]*>/gi, '\n')
+    // 移除所有剩余标签
+    .replace(/<[^>]+>/g, ' ')
+    // 解码 HTML 实体
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#x27;/g, "'")
+    .replace(/&#x2F;/g, '/')
+    // 清理空白
+    .replace(/\n\s*\n/g, '\n')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/^\s+|\s+$/gm, '')
+    .trim();
+
+  // 如果内容太少，尝试从 description 补充
+  let content = text;
+  if (content.length < 50 && description) {
+    content = description + '\n\n' + content;
+  }
+
+  return { title: title || '未命名页面', content };
+}
+
+// 从 URL 抓取内容
+export async function fetchUrlContent(url: string): Promise<{ title: string; content: string }> {
+  // 验证 URL
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+    if (!['http:', 'https:'].includes(parsed.protocol)) {
+      throw new Error('仅支持 HTTP/HTTPS 链接');
+    }
+  } catch (e) {
+    throw new Error('请输入有效的链接地址（以 http:// 或 https:// 开头）');
+  }
+
+  const errors: string[] = [];
+
+  // 1. 尝试直接 fetch
+  try {
+    const response = await fetch(url, {
+      signal: AbortSignal.timeout(8000),
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; KnowledgeBot/1.0)' },
+    });
+    if (response.ok) {
+      const html = await response.text();
+      if (html.length > 100) {
+        return extractTextFromHTML(html);
+      }
+    }
+    errors.push(`直接访问失败 (HTTP ${response.status})`);
+  } catch (e) {
+    errors.push(`直接访问失败 (${(e as Error).name})`);
+  }
+
+  // 2. 尝试 CORS 代理
+  for (const proxy of CORS_PROXIES) {
+    try {
+      const proxyUrl = proxy(url);
+      const response = await fetch(proxyUrl, {
+        signal: AbortSignal.timeout(15000),
+      });
+      if (response.ok) {
+        const text = await response.text();
+        // 检测代理返回的错误页面
+        if (text.includes('522: Connection timed out') || text.includes('520: Web server is returning')) {
+          errors.push(`${new URL(proxyUrl).hostname}: 代理无法连接到目标服务器`);
+          continue;
+        }
+        if (text.includes('百度安全验证') || text.includes('安全验证')) {
+          throw new Error('该网站（百度百科等）有安全验证机制，禁止自动化访问。\n建议：手动复制网页内容后粘贴到知识库中。');
+        }
+        if (text.length > 100) {
+          return extractTextFromHTML(text);
+        }
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : '未知错误';
+      const proxyHost = new URL(proxy(url)).hostname;
+      errors.push(`${proxyHost}: ${msg}`);
+      continue;
+    }
+  }
+
+  throw new Error(
+    `无法访问该链接。\n\n${errors.join('\n')}\n\n` +
+    '常见原因：\n' +
+    '1. ⚠️ 百度百科等网站有安全验证，无法自动抓取\n' +
+    '2. 链接地址不正确或已失效\n' +
+    '3. 需要登录才能查看内容\n' +
+    '4. 网站服务器暂时不可用\n\n' +
+    '建议：尝试以下网址\n' +
+    '  - ✅ 维基百科 (zh.wikipedia.org) — 支持\n' +
+    '  - ✅ MDN文档 (developer.mozilla.org) — 支持\n' +
+    '  - ✅ 任何公开技术博客 — 支持\n' +
+    '  - ❌ 百度百科、知乎等有反爬机制 — 不支持\n\n' +
+    '对于不支持的网站，请手动复制内容后粘贴到知识库中。'
+  );
+}
+
 // 文本分块
 export function chunkText(text: string, chunkSize: number = 512): string[] {
   const chunks: string[] = [];

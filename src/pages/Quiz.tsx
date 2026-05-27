@@ -12,11 +12,14 @@ import {
   ChevronLeft,
   Upload,
   FileUp,
+  FileText,
   Sparkles,
   ChevronDown,
   ChevronUp,
   Image,
   Trash2,
+  Link2,
+  Globe,
 } from 'lucide-react';
 import type { Document, Question, PracticeSession, GeneratedQuestion, APIConfig } from '../types';
 import {
@@ -30,8 +33,11 @@ import {
   deleteQuestion,
   getCurrentCourseId,
   getCorrectlyAnsweredQuestionIds,
+  createDocument,
+  createDocumentChunks,
+  updateDocumentContent,
 } from '../services/db';
-import { generateQuestions, getAPIConfigForFunction, chatWithAI, parseQuestionsFromFile, parseQuestionsFromImages, fileToBase64, extractFileContent } from '../services/api';
+import { generateQuestions, getAPIConfigForFunction, chatWithAI, parseQuestionsFromFile, parseQuestionsFromImages, fileToBase64, extractFileContent, fetchUrlContent, chunkText } from '../services/api';
 import { isImageFile, renderPdfPagesToBase64 } from '../services/fileParser';
 
 function stripOptionPrefix(option: string): string {
@@ -80,6 +86,11 @@ export function Quiz() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [showFormatExample, setShowFormatExample] = useState(false);
   const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
+  const [docSource, setDocSource] = useState<'library' | 'link'>('library');
+  const [urlInput, setUrlInput] = useState('');
+  const [urlFetchedContent, setUrlFetchedContent] = useState('');
+  const [urlTitle, setUrlTitle] = useState('');
+  const [isFetchingUrl, setIsFetchingUrl] = useState(false);
 
   useEffect(() => {
     // 获取题目生成API配置
@@ -113,27 +124,66 @@ export function Quiz() {
     loadData();
   }, [loadData]);
 
-  const handleGenerateQuestions = async () => {
-    if (!selectedDoc) {
-      setError('请先选择文档');
+  const handleFetchUrl = async () => {
+    if (!urlInput.trim()) {
+      setError('请输入链接地址');
       return;
     }
+
+    setIsFetchingUrl(true);
+    setError('');
+    setUrlFetchedContent('');
+
+    try {
+      const result = await fetchUrlContent(urlInput.trim());
+      setUrlTitle(result.title);
+      setUrlFetchedContent(result.content);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '获取内容失败';
+      setError(msg);
+      console.error('[考试粥助手] 获取链接内容失败：', err);
+    } finally {
+      setIsFetchingUrl(false);
+    }
+  };
+
+  const handleGenerateQuestions = async () => {
     if (!apiConfig) {
       setError('请先配置题目生成API，前往设置页面配置');
       return;
     }
 
-    const doc = documents.find((d) => d.id === selectedDoc);
-    if (!doc || !doc.content) {
-      setError('文档内容为空');
-      return;
+    let content = '';
+    let sourceLabel = '';
+    let docId: string | null = null;
+
+    if (docSource === 'link') {
+      if (!urlFetchedContent) {
+        setError('请先输入链接并获取内容');
+        return;
+      }
+      content = urlFetchedContent;
+      sourceLabel = urlTitle || urlInput;
+    } else {
+      if (!selectedDoc) {
+        setError('请先选择文档');
+        return;
+      }
+      const doc = documents.find((d) => d.id === selectedDoc);
+      if (!doc || !doc.content) {
+        setError('文档内容为空');
+        return;
+      }
+      content = doc.content;
+      sourceLabel = doc.filename;
+      docId = doc.id;
     }
 
     setIsGenerating(true);
     setError('');
 
     try {
-      const result = await generateQuestions(doc.content, {
+      const result = await generateQuestions(content, {
         apiConfig,
         questionTypes: config.types,
         count: config.count,
@@ -143,7 +193,7 @@ export function Quiz() {
 
       if (result.questions && result.questions.length > 0) {
         const newQuestions = result.questions.map((q: GeneratedQuestion) => ({
-          document_id: doc.id,
+          document_id: docId,
           course_id: currentCourseId,
           question_type: q.question_type,
           question_text: q.question_text,
@@ -152,10 +202,33 @@ export function Quiz() {
           explanation: q.explanation,
           difficulty: q.difficulty,
           knowledge_point: q.knowledge_point,
-          source: `AI生成 · ${doc.filename} · 难度${config.difficulty}`,
+          source: `AI生成 · ${sourceLabel} · 难度${config.difficulty}`,
         }));
 
         await createQuestions(newQuestions);
+
+        // 如果是从链接生成的，自动保存到知识库
+        if (docSource === 'link') {
+          try {
+            const title = urlTitle || new URL(urlInput).hostname;
+            const doc = await createDocument({
+              filename: `[链接] ${title}`,
+              file_type: '.link',
+              file_size: content.length,
+              storage_path: urlInput,
+              content: content,
+              chunk_count: 0,
+            });
+            if (doc) {
+              const chunks = chunkText(content, 512);
+              await createDocumentChunks(doc.id, chunks);
+              await updateDocumentContent(doc.id, content, chunks.length);
+            }
+          } catch (err) {
+            console.error('[考试粥助手] 自动保存链接失败：', err);
+          }
+        }
+
         await loadData();
       } else {
         setError('未能生成题目，请重试');
@@ -491,6 +564,35 @@ export function Quiz() {
             /* AI Generate Questions Section */
             <div className="p-6 rounded-xl bg-card border border-card mb-6">
               <h3 className="font-medium text-title mb-4">生成新题目</h3>
+
+              {/* Source selector */}
+              <div className="flex gap-2 mb-4">
+                <button
+                  onClick={() => setDocSource('library')}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                    docSource === 'library'
+                      ? 'bg-grad-from/20 text-primary border border-grad-from/50'
+                      : 'bg-elevated text-body border border-elevated hover-border-elevated'
+                  }`}
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  知识库文档
+                </button>
+                <button
+                  onClick={() => setDocSource('link')}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                    docSource === 'link'
+                      ? 'bg-grad-to/20 text-primary-2 border border-grad-to/50'
+                      : 'bg-elevated text-body border border-elevated hover-border-elevated'
+                  }`}
+                >
+                  <Link2 className="w-3.5 h-3.5" />
+                  知识链接
+                </button>
+              </div>
+
+              {/* Document selector or URL input */}
+              {docSource === 'library' ? (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <div>
                   <label className="block text-sm text-body mb-2">选择文档</label>
@@ -530,6 +632,70 @@ export function Quiz() {
                   />
                 </div>
               </div>
+              ) : (
+              <div className="mb-4">
+                <label className="block text-sm text-body mb-2">知识链接</label>
+                <div className="flex gap-2">
+                  <input
+                    type="url"
+                    placeholder="输入网页链接，例如 https://example.com"
+                    value={urlInput}
+                    onChange={(e) => setUrlInput(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleFetchUrl()}
+                    className="flex-1 px-3 py-2 rounded-lg bg-elevated border border-elevated text-title placeholder-slate-500 focus:outline-none focus:border-grad-to/50"
+                    disabled={isFetchingUrl}
+                  />
+                  <button
+                    onClick={handleFetchUrl}
+                    disabled={isFetchingUrl || !urlInput.trim()}
+                    className="px-4 py-2 rounded-lg bg-gradient-to-r from-grad-from to-grad-to text-white font-medium text-sm disabled:opacity-50 flex items-center gap-1.5 flex-shrink-0"
+                  >
+                    {isFetchingUrl ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Link2 className="w-3.5 h-3.5" />
+                    )}
+                    获取内容
+                  </button>
+                </div>
+                {urlFetchedContent && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mt-3 p-3 rounded-lg bg-elevated-50 border border-elevated"
+                  >
+                    <p className="text-xs text-muted mb-1">
+                      已获取：{urlTitle || '未命名页面'}（{urlFetchedContent.length} 字符）
+                    </p>
+                    <p className="text-xs text-body line-clamp-3">
+                      {urlFetchedContent.substring(0, 200)}...
+                    </p>
+                  </motion.div>
+                )}
+                <div className="flex items-center gap-2 mt-3">
+                  <label className="text-sm text-body">题目数量</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="200"
+                    value={config.count}
+                    onChange={(e) => setConfig({ ...config, count: parseInt(e.target.value) })}
+                    className="w-20 px-2 py-1 rounded bg-elevated border border-elevated text-title text-sm"
+                  />
+                  <label className="text-sm text-body ml-2">难度 (1-5)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="5"
+                    value={config.difficulty}
+                    onChange={(e) => setConfig({ ...config, difficulty: parseInt(e.target.value) })}
+                    className="w-16 px-2 py-1 rounded bg-elevated border border-elevated text-title text-sm"
+                  />
+                </div>
+              </div>
+              )}
+
+              {/* Type presets - shown for both modes */}
               <div className="mb-4">
                 <label className="block text-sm text-body mb-2">题型</label>
                 <div className="flex flex-wrap gap-2">
@@ -553,7 +719,7 @@ export function Quiz() {
               </div>
               <button
                 onClick={handleGenerateQuestions}
-                disabled={isGenerating}
+                disabled={isGenerating || (docSource === 'library' ? !selectedDoc : !urlFetchedContent)}
                 className="px-4 py-2 rounded-lg bg-gradient-to-r from-grad-from to-grad-to text-white font-medium disabled:opacity-50 flex items-center gap-2"
               >
                 {isGenerating ? (

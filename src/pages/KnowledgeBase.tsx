@@ -13,6 +13,8 @@ import {
   Sparkles,
   X,
   BookOpen,
+  Link2,
+  Globe,
 } from 'lucide-react';
 import type { Document, APIConfig } from '../types';
 import {
@@ -24,7 +26,7 @@ import {
   storeFileBlob,
   getCurrentCourseId,
 } from '../services/db';
-import { extractFileContent, chunkText, ocrImage, getAPIConfigForFunction } from '../services/api';
+import { extractFileContent, chunkText, ocrImage, getAPIConfigForFunction, fetchUrlContent } from '../services/api';
 
 export function KnowledgeBase() {
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -41,6 +43,11 @@ export function KnowledgeBase() {
   const [autoCorrect, setAutoCorrect] = useState(true);
   const [currentCourseId, setCurrentCourseIdState] = useState<string | null>(null);
   const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
+  const [inputMode, setInputMode] = useState<'file' | 'link'>('file');
+  const [urlInput, setUrlInput] = useState('');
+  const [urlTitle, setUrlTitle] = useState('');
+  const [urlFetchedContent, setUrlFetchedContent] = useState('');
+  const [isFetchingUrl, setIsFetchingUrl] = useState(false);
 
   const loadDocuments = useCallback(async () => {
     try {
@@ -224,6 +231,66 @@ export function KnowledgeBase() {
     }
   };
 
+  const handleFetchUrl = async () => {
+    if (!urlInput.trim()) {
+      setError('请输入链接地址');
+      return;
+    }
+
+    setIsFetchingUrl(true);
+    setError('');
+    setUrlFetchedContent('');
+
+    try {
+      const result = await fetchUrlContent(urlInput.trim());
+      setUrlTitle(result.title);
+      setUrlFetchedContent(result.content);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '获取内容失败';
+      setError(msg);
+      console.error('[考试粥助手] 获取链接内容失败：', err);
+    } finally {
+      setIsFetchingUrl(false);
+    }
+  };
+
+  const handleSaveUrlContent = async () => {
+    if (!urlFetchedContent) return;
+
+    setIsUploading(true);
+    setUploadProgress('正在保存...');
+
+    try {
+      const title = urlTitle || new URL(urlInput).hostname;
+      const doc = await createDocument({
+        filename: `[链接] ${title}`,
+        file_type: '.link',
+        file_size: urlFetchedContent.length,
+        storage_path: urlInput,
+        content: urlFetchedContent,
+        chunk_count: 0,
+      });
+
+      if (doc) {
+        const chunks = chunkText(urlFetchedContent, 512);
+        await createDocumentChunks(doc.id, chunks);
+        await updateDocumentContent(doc.id, urlFetchedContent, chunks.length);
+        await loadDocuments();
+      }
+
+      setUrlInput('');
+      setUrlTitle('');
+      setUrlFetchedContent('');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '保存失败';
+      setError(msg);
+      console.error('[考试粥助手] 保存链接失败：', err);
+    } finally {
+      setIsUploading(false);
+      setUploadProgress('');
+    }
+  };
+
   const handleDelete = async (id: string) => {
     if (!confirm('确定要删除这个文档吗？')) return;
 
@@ -281,6 +348,33 @@ export function KnowledgeBase() {
           </motion.div>
         )}
 
+        {/* 输入模式切换 */}
+        <div className="flex gap-2 mb-4">
+          <button
+            onClick={() => setInputMode('file')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
+              inputMode === 'file'
+                ? 'bg-grad-from/20 text-primary'
+                : 'text-body hover-text-heading'
+            }`}
+          >
+            <Upload className="w-4 h-4" />
+            上传文件
+          </button>
+          <button
+            onClick={() => setInputMode('link')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
+              inputMode === 'link'
+                ? 'bg-grad-to/20 text-primary-2'
+                : 'text-body hover-text-heading'
+            }`}
+          >
+            <Link2 className="w-4 h-4" />
+            知识链接
+          </button>
+        </div>
+
+        {inputMode === 'file' ? (
         <div className="mb-8">
           <label
             className={`relative block p-8 rounded-2xl border-2 border-dashed transition-all duration-300 cursor-pointer ${
@@ -318,6 +412,90 @@ export function KnowledgeBase() {
             </div>
           </label>
         </div>
+        ) : (
+        <div className="mb-8">
+          <div className="p-6 rounded-2xl border-2 border-elevated hover:border-grad-to/50 transition-colors">
+            <div className="flex items-center gap-2 mb-4">
+              <Globe className="w-5 h-5 text-primary-2" />
+              <h3 className="text-lg font-semibold text-title">从链接获取知识</h3>
+            </div>
+            <p className="text-sm text-body mb-4">
+              输入网页链接，自动提取正文内容并存入知识库
+            </p>
+
+            <div className="flex gap-3">
+              <input
+                type="url"
+                placeholder="请输入网页链接，例如 https://example.com"
+                value={urlInput}
+                onChange={(e) => setUrlInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleFetchUrl()}
+                className="flex-1 px-4 py-3 rounded-xl bg-card border border-elevated text-title placeholder-slate-500 focus:outline-none focus:border-grad-to/50"
+                disabled={isFetchingUrl}
+              />
+              <button
+                onClick={handleFetchUrl}
+                disabled={isFetchingUrl || !urlInput.trim()}
+                className="px-6 py-3 rounded-xl bg-gradient-to-r from-grad-from to-grad-to text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 flex-shrink-0"
+              >
+                {isFetchingUrl ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    获取中...
+                  </>
+                ) : (
+                  <>
+                    <Link2 className="w-4 h-4" />
+                    获取内容
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* 内容预览 */}
+            {urlFetchedContent && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-4 space-y-3"
+              >
+                <div className="flex gap-3">
+                  <input
+                    type="text"
+                    placeholder="页面标题（可编辑）"
+                    value={urlTitle}
+                    onChange={(e) => setUrlTitle(e.target.value)}
+                    className="flex-1 px-4 py-2 rounded-lg bg-card border border-elevated text-title placeholder-slate-500 focus:outline-none focus:border-grad-to/50 text-sm"
+                  />
+                  <button
+                    onClick={handleSaveUrlContent}
+                    disabled={isUploading}
+                    className="px-4 py-2 rounded-lg bg-gradient-to-r from-grad-from to-grad-to text-white font-medium text-sm disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {isUploading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <CheckCircle className="w-4 h-4" />
+                    )}
+                    保存到知识库
+                  </button>
+                </div>
+                <div className="p-4 rounded-xl bg-card border border-elevated max-h-96 overflow-y-auto">
+                  <p className="text-xs text-muted mb-2">
+                    共提取 {urlFetchedContent.length} 个字符
+                  </p>
+                  <p className="text-sm text-body whitespace-pre-wrap leading-relaxed">
+                    {urlFetchedContent.substring(0, 3000)}
+                    {urlFetchedContent.length > 3000 && (
+                      <span className="text-muted">……（内容较长，保存后可完整查看）</span>
+                    )}
+                  </p>
+                </div>
+              </motion.div>
+            )}
+          </div>
+        </div>
+        )}
 
         <div className="mb-6">
           <div className="relative">
@@ -354,11 +532,15 @@ export function KnowledgeBase() {
               >
                 <div className="flex items-start gap-3">
                   <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                    doc.file_type.match(/\.(jpg|jpeg|png|gif|webp|bmp)$/)
+                    doc.file_type === '.link'
+                      ? 'bg-gradient-to-br from-cyan-500/20 to-blue-500/20'
+                      : doc.file_type.match(/\.(jpg|jpeg|png|gif|webp|bmp)$/)
                       ? 'bg-gradient-to-br from-purple-500/20 to-pink-500/20'
                       : 'bg-gradient-to-br from-grad-from/20 to-grad-to/20'
                   }`}>
-                    {doc.file_type.match(/\.(jpg|jpeg|png|gif|webp|bmp)$/) ? (
+                    {doc.file_type === '.link' ? (
+                      <Link2 className="w-5 h-5 text-cyan-400" />
+                    ) : doc.file_type.match(/\.(jpg|jpeg|png|gif|webp|bmp)$/) ? (
                       <ImageIcon className="w-5 h-5 text-purple-400" />
                     ) : (
                       <FileText className="w-5 h-5 text-primary" />
@@ -372,6 +554,14 @@ export function KnowledgeBase() {
                       <span>{doc.file_type.toUpperCase()}</span>
                       <span>·</span>
                       <span>{formatFileSize(doc.file_size || 0)}</span>
+                      {doc.file_type === '.link' && doc.storage_path && (
+                        <>
+                          <span>·</span>
+                          <span className="text-cyan-400 truncate max-w-[150px]" title={doc.storage_path}>
+                            {doc.storage_path}
+                          </span>
+                        </>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 mt-2 text-xs text-muted">
                       {doc.chunk_count && doc.chunk_count > 0 && (
