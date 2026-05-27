@@ -20,6 +20,7 @@ import {
   Trash2,
   Link2,
   Globe,
+  Zap,
 } from 'lucide-react';
 import type { Document, Question, PracticeSession, GeneratedQuestion, APIConfig } from '../types';
 import {
@@ -38,6 +39,7 @@ import {
   updateDocumentContent,
 } from '../services/db';
 import { generateQuestions, getAPIConfigForFunction, chatWithAI, parseQuestionsFromFile, parseQuestionsFromImages, fileToBase64, extractFileContent, fetchUrlContent, chunkText } from '../services/api';
+import { parseQuestionsLocally, isStructuredContent } from '../services/questionParser';
 import { isImageFile, renderPdfPagesToBase64 } from '../services/fileParser';
 
 function stripOptionPrefix(option: string): string {
@@ -91,6 +93,8 @@ export function Quiz() {
   const [urlFetchedContent, setUrlFetchedContent] = useState('');
   const [urlTitle, setUrlTitle] = useState('');
   const [isFetchingUrl, setIsFetchingUrl] = useState(false);
+  const [importMode, setImportMode] = useState<'ai' | 'pure'>('pure');
+  const [localParsedQuestions, setLocalParsedQuestions] = useState<GeneratedQuestion[] | null>(null);
 
   useEffect(() => {
     // 获取题目生成API配置
@@ -252,6 +256,7 @@ export function Quiz() {
         setUploadedContent(null);
         setUploadedFileName(file.name);
         setImportResult(null);
+        setLocalParsedQuestions(null);
         setError('');
         e.target.value = '';
         return;
@@ -263,6 +268,7 @@ export function Quiz() {
         setUploadedContent(null);
         setUploadedFileName(file.name);
         setImportResult(null);
+        setLocalParsedQuestions(null);
         setError('');
       } else {
         setUploadedContent(content);
@@ -270,6 +276,14 @@ export function Quiz() {
         setUploadedFileName(file.name);
         setImportResult(null);
         setError('');
+
+        // 纯享版：自动本地解析
+        if (importMode === 'pure' && isStructuredContent(content)) {
+          const parsed = parseQuestionsLocally(content);
+          setLocalParsedQuestions(parsed);
+        } else {
+          setLocalParsedQuestions(null);
+        }
       }
     } catch (err) {
       setError('文件读取失败');
@@ -305,7 +319,7 @@ export function Quiz() {
       }
     }
 
-    if (!apiConfig) {
+    if (importMode === 'ai' && !apiConfig) {
       setError('请先配置题目生成API，前往设置页面配置');
       return;
     }
@@ -315,9 +329,13 @@ export function Quiz() {
     setImportResult(null);
 
     try {
-      let result: { questions: GeneratedQuestion[]; raw?: string };
+      let resultQuestions: GeneratedQuestion[];
 
-      if (useMultimodal && uploadedFile) {
+      if (importMode === 'pure' && localParsedQuestions) {
+        // 纯享版：使用本地解析的结果
+        resultQuestions = localParsedQuestions;
+      } else if (useMultimodal && uploadedFile) {
+        // AI 视觉识别图片/PDF
         let images: { base64: string; mimeType: string }[];
         if (isImageFile(uploadedFile)) {
           const b64 = await fileToBase64(uploadedFile);
@@ -329,18 +347,21 @@ export function Quiz() {
           setIsImporting(false);
           return;
         }
-        result = await parseQuestionsFromImages(images);
+        const result = await parseQuestionsFromImages(images);
+        resultQuestions = result.questions;
       } else {
-        result = await parseQuestionsFromFile(content!, { apiConfig });
+        // AI 解析文本
+        const result = await parseQuestionsFromFile(content!, { apiConfig: apiConfig! });
+        resultQuestions = result.questions;
       }
 
-      if (!result.questions || result.questions.length === 0) {
+      if (!resultQuestions || resultQuestions.length === 0) {
         setError('未能从内容中识别出题目，请检查文件内容格式');
         setIsImporting(false);
         return;
       }
 
-      const newQuestions = result.questions.map((q) => ({
+      const newQuestions = resultQuestions.map((q) => ({
         document_id: docId,
         course_id: currentCourseId,
         question_type: q.question_type,
@@ -357,11 +378,12 @@ export function Quiz() {
       await loadData();
 
       const types: Record<string, number> = {};
-      result.questions.forEach((q) => {
+      resultQuestions.forEach((q) => {
         types[q.question_type] = (types[q.question_type] || 0) + 1;
       });
 
-      setImportResult({ total: result.questions.length, types });
+      setImportResult({ total: resultQuestions.length, types });
+      setLocalParsedQuestions(null);
     } catch (err) {
       const msg = err instanceof Error ? err.message : '识别题目失败';
       setError(msg);
@@ -739,9 +761,49 @@ export function Quiz() {
             /* Quiz Bank Import Section */
             <div className="p-6 rounded-xl bg-card border border-card mb-6">
               <h3 className="font-medium text-title mb-4">导入题库</h3>
-              <p className="text-muted text-sm mb-4">
-                上传包含题目的文件（含图片），AI 自动识别题目结构，补全缺失的答案和解析
-              </p>
+
+              {/* 模式切换：纯享版 / AI版 */}
+              <div className="flex gap-2 mb-4">
+                <button
+                  onClick={() => {
+                    setImportMode('pure');
+                    setLocalParsedQuestions(null);
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                    importMode === 'pure'
+                      ? 'bg-green-500/20 text-green-400 border border-green-500/50'
+                      : 'bg-elevated text-body border border-elevated hover-border-elevated'
+                  }`}
+                >
+                  <Zap className="w-3.5 h-3.5" />
+                  纯享版（本地解析）
+                </button>
+                <button
+                  onClick={() => {
+                    setImportMode('ai');
+                    setLocalParsedQuestions(null);
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                    importMode === 'ai'
+                      ? 'bg-grad-from/20 text-primary border border-grad-from/50'
+                      : 'bg-elevated text-body border border-elevated hover-border-elevated'
+                  }`}
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  AI版（智能识别）
+                </button>
+              </div>
+
+              {importMode === 'pure' ? (
+                <p className="text-green-400/80 text-sm mb-4 flex items-center gap-1.5">
+                  <Zap className="w-4 h-4" />
+                  纯本地解析，无需 AI。上传结构化格式的题目，自动识别题型、选项和答案
+                </p>
+              ) : (
+                <p className="text-muted text-sm mb-4">
+                  上传包含题目的文件（含图片），AI 自动识别题目结构，补全缺失的答案和解析
+                </p>
+              )}
 
               {/* Format Example Toggle */}
               <button
@@ -776,8 +838,8 @@ D. 选项四
 答案：一切物体在不受外力作用时...
 解析：也称惯性定律...
 
-提示：格式灵活，AI 会自动识别题型和结构。
-也可直接上传试卷截图/照片，自动OCR识别。`}</pre>
+纯享版：格式不限，只要有序号+答案标记即可自动识别
+AI版：格式灵活，支持截图/照片，AI自动识别`}</pre>
                 </div>
               )}
 
@@ -826,6 +888,11 @@ D. 选项四
                         {uploadedFile && !uploadedContent && (
                           <p className="text-orange-400 text-xs mt-1">将使用多模态AI识别</p>
                         )}
+                        {importMode === 'pure' && localParsedQuestions && (
+                          <p className="text-green-400 text-xs mt-1">
+                            已本地解析：{localParsedQuestions.length} 道题目
+                          </p>
+                        )}
                         <p className="text-muted text-sm mt-1">点击重新选择文件</p>
                       </div>
                     ) : (
@@ -855,9 +922,61 @@ D. 选项四
                 </div>
               )}
 
+              {/* 纯享版：本地解析结果预览 */}
+              {importMode === 'pure' && localParsedQuestions && localParsedQuestions.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mb-4 p-4 rounded-lg bg-green-500/5 border border-green-500/20"
+                >
+                  <div className="flex items-center gap-2 mb-3">
+                    <CheckCircle className="w-4 h-4 text-green-400" />
+                    <span className="text-green-400 font-medium text-sm">
+                      本地解析完成：共 {localParsedQuestions.length} 道题目
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {(() => {
+                      const types: Record<string, number> = {};
+                      localParsedQuestions.forEach(q => { types[q.question_type] = (types[q.question_type] || 0) + 1; });
+                      return Object.entries(types).map(([type, count]) => (
+                        <span key={type} className={`px-2 py-0.5 rounded text-xs ${
+                          type === 'choice' ? 'bg-blue-500/10 text-blue-400' :
+                          type === 'judgment' ? 'bg-green-500/10 text-green-400' :
+                          type === 'fill_blank' ? 'bg-purple-500/10 text-primary-2' :
+                          'bg-orange-500/10 text-orange-400'
+                        }`}>
+                          {type === 'choice' ? '选择题' : type === 'judgment' ? '判断题' : type === 'fill_blank' ? '填空题' : '简答题'} {count}
+                        </span>
+                      ));
+                    })()}
+                  </div>
+                  <div className="max-h-48 overflow-y-auto space-y-2">
+                    {localParsedQuestions.slice(0, 20).map((q, i) => (
+                      <div key={i} className="p-2 rounded bg-elevated-50 text-xs text-body">
+                        <span className="text-muted mr-2">#{i + 1}</span>
+                        <span className={`px-1 py-0.5 rounded text-xs mr-2 ${
+                          q.question_type === 'choice' ? 'text-blue-400' :
+                          q.question_type === 'judgment' ? 'text-green-400' :
+                          q.question_type === 'fill_blank' ? 'text-primary-2' :
+                          'text-orange-400'
+                        }`}>
+                          [{q.question_type === 'choice' ? '选择' : q.question_type === 'judgment' ? '判断' : q.question_type === 'fill_blank' ? '填空' : '简答'}]
+                        </span>
+                        {q.question_text.substring(0, 60)}{q.question_text.length > 60 ? '...' : ''}
+                        {q.correct_answer && <span className="text-green-400 ml-2">答案：{q.correct_answer}</span>}
+                      </div>
+                    ))}
+                    {localParsedQuestions.length > 20 && (
+                      <p className="text-xs text-muted text-center">...还有 {localParsedQuestions.length - 20} 道</p>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+
               <button
                 onClick={handleImportQuestions}
-                disabled={isImporting || (quizBankSource === 'upload' ? (!uploadedContent && !uploadedFile) : !selectedDoc)}
+                disabled={isImporting || (importMode === 'pure' ? !localParsedQuestions : (quizBankSource === 'upload' ? (!uploadedContent && !uploadedFile) : !selectedDoc))}
                 className="px-4 py-2 rounded-lg bg-gradient-to-r from-grad-from to-grad-to text-white font-medium disabled:opacity-50 flex items-center gap-2"
               >
                 {isImporting ? (
@@ -867,8 +986,8 @@ D. 选项四
                   </>
                 ) : (
                   <>
-                    <Sparkles className="w-4 h-4" />
-                    识别并导入题目
+                    {importMode === 'pure' ? <Zap className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
+                    {importMode === 'pure' ? '直接导入题库' : '识别并导入题目'}
                   </>
                 )}
               </button>
