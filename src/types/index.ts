@@ -1,5 +1,18 @@
 // 类型定义
 
+// Electron API 声明 (由 preload.js 注入)
+declare global {
+  interface Window {
+    electronAPI?: {
+      platform: string;
+      isElectron: boolean;
+      minimizeWindow: () => void;
+      maximizeWindow: () => void;
+      closeWindow: () => void;
+    };
+  }
+}
+
 export interface Course {
   id: string;
   name: string;

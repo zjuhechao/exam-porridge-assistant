@@ -1,7 +1,10 @@
 import * as pdfjsLib from 'pdfjs-dist';
 import mammoth from 'mammoth';
+// webpack 将此 worker 文件打包为静态资源，返回其 URL
+// Electron 离线环境也能正确加载，不依赖 CDN
+import pdfjsWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs';
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.min.mjs';
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorkerUrl;
 
 export function isImageFile(file: File): boolean {
   return /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(file.name);
