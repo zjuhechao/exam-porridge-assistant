@@ -201,9 +201,9 @@ AI 生成题目时要求返回严格 JSON 格式，`generateQuestions()` 和 `pa
 **`preload.js`** — 预加载脚本：通过 `contextBridge` 向渲染进程暴露 `window.electronAPI`（平台信息、窗口控制）。初期最小化，后续可按需扩展原生功能。
 
 **关键适配点**：
-- `pdfjs-dist` Worker 设为 `false`（主线程运行），避免 Electron 离线时 CDN Worker 不可用
-- TypeScript 全局声明 `window.electronAPI` 已添加（`src/types/index.ts`）
-- `webpack.config.js` 的 `publicPath: 'auto'` 兼容 `file://` 协议
+- `pdfjs-dist` Worker 通过 webpack `asset/resource` 规则本地打包，`import` 获取文件 URL，避免 Electron 离线时 CDN Worker 不可用
+- TypeScript 全局声明 `window.electronAPI` 已添加（`src/types/index.ts`）+ webpack asset 模块声明（`src/asset-imports.d.ts`）
+- `webpack.config.js` 的 `publicPath: './'` 确保所有资源使用相对路径，兼容 `file://` 协议
 - `electron-builder` 配置在 `package.json` 的 `build` 字段中，支持 Windows (NSIS) / macOS (DMG) / Linux (AppImage)
 
 **添加应用图标**：创建 `src/assets/icon.png`（256x256 或更大），然后取消 `main.js` 和 `electron-builder` 中 icon 路径的注释。

@@ -39,9 +39,13 @@ jobs:
           cache: npm
 
       - name: Sync version from tag
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: startsWith(github.ref, 'refs/tags/v') || github.event.inputs.tag != ''
         run: |
-          TAG_VERSION="${{ github.ref_name }}"
+          if [ "${{ github.event.inputs.tag }}" != "" ]; then
+            TAG_VERSION="${{ github.event.inputs.tag }}"
+          else
+            TAG_VERSION="${{ github.ref_name }}"
+          fi
           TAG_VERSION="${TAG_VERSION#v}"
           npm version "$TAG_VERSION" --no-git-tag-version --allow-same-version
 

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, shell } = require('electron');
+const { app, BrowserWindow, shell, ipcMain } = require('electron');
 const path = require('path');
 
 // 开发模式: NODE_ENV=development 或命令行 --dev 参数
@@ -22,9 +22,14 @@ function createWindow() {
     autoHideMenuBar: true,
   });
 
-  // 在外部浏览器打开链接
+  // 在外部浏览器打开链接（仅允许 http/https/mailto 协议）
   win.webContents.setWindowOpenHandler(({ url }) => {
-    shell.openExternal(url);
+    try {
+      const parsed = new URL(url);
+      if (['http:', 'https:', 'mailto:'].includes(parsed.protocol)) {
+        shell.openExternal(url);
+      }
+    } catch {}
     return { action: 'deny' };
   });
 
@@ -43,9 +48,9 @@ function createWindow() {
     });
   }
 
-  // 监听控制台消息（方便调试）
+  // 监听控制台消息（方便调试，level: 0=log 1=warning 2=error）
   win.webContents.on('console-message', (event, level, message) => {
-    if (level >= 2) { // warning 及以上
+    if (level >= 1) { // warning 及以上
       console.log(`[Renderer] ${message}`);
     }
   });
@@ -62,6 +67,20 @@ app.whenReady().then(() => {
       createWindow();
     }
   });
+});
+
+// 窗口控制 IPC
+ipcMain.on('window:minimize', (event) => {
+  BrowserWindow.fromWebContents(event.sender)?.minimize();
+});
+ipcMain.on('window:maximize', (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (win) {
+    win.isMaximized() ? win.unmaximize() : win.maximize();
+  }
+});
+ipcMain.on('window:close', (event) => {
+  BrowserWindow.fromWebContents(event.sender)?.close();
 });
 
 // 所有窗口关闭时退出 (macOS 除外)
