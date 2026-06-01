@@ -1,0 +1,142 @@
+name: Release Electron App
+
+on:
+  push:
+    tags:
+      - 'v*'               # 推送 v1.0.0 等版本标签时触发
+  workflow_dispatch:        # 支持手动触发
+    inputs:
+      tag:
+        description: '版本号 (如 v2.1.0)，留空则使用 package.json 中的版本'
+        required: false
+        default: ''
+
+jobs:
+  # ── 三平台并行构建 ──
+  build:
+    name: Build (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: win
+          - os: macos-latest
+            target: mac
+          - os: ubuntu-latest
+            target: linux
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Sync version from tag
+        if: startsWith(github.ref, 'refs/tags/v') || github.event.inputs.tag != ''
+        run: |
+          if [ "${{ github.event.inputs.tag }}" != "" ]; then
+            TAG_VERSION="${{ github.event.inputs.tag }}"
+          else
+            TAG_VERSION="${{ github.ref_name }}"
+          fi
+          TAG_VERSION="${TAG_VERSION#v}"
+          npm version "$TAG_VERSION" --no-git-tag-version --allow-same-version
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build webpack
+        run: npm run build
+
+      - name: Build Electron (${{ matrix.target }})
+        run: npx electron-builder --${{ matrix.target }} --publish never
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}-installer
+          path: |
+            release/*.exe
+            release/*.dmg
+            release/*.AppImage
+            release/*.snap
+            release/*.deb
+            release/*.rpm
+          if-no-files-found: ignore
+
+  # ── 收集产物并创建 GitHub Release ──
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Get version
+        id: version
+        run: |
+          if [ "${{ github.event.inputs.tag }}" != "" ]; then
+            TAG="${{ github.event.inputs.tag }}"
+          elif [ "${{ github.ref_type }}" = "tag" ]; then
+            TAG="${{ github.ref_name }}"
+          else
+            TAG="v$(node -p "require('./package.json').version")"
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          echo "name=${TAG#v}" >> $GITHUB_OUTPUT
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release
+          merge-multiple: true
+
+      - name: List artifacts
+        run: ls -lh release/
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          echo "## ${{ steps.version.outputs.tag }}" > CHANGELOG.md
+          echo "" >> CHANGELOG.md
+          echo "### 桌面安装包" >> CHANGELOG.md
+          echo "| 平台 | 文件 |" >> CHANGELOG.md
+          echo "|------|------|" >> CHANGELOG.md
+          find release -type f \( -name "*.exe" -o -name "*.dmg" -o -name "*.AppImage" -o -name "*.deb" -o -name "*.rpm" \) | while read f; do
+            name=$(basename "$f")
+            size=$(du -h "$f" | cut -f1)
+            case "$name" in
+              *.exe) platform="Windows" ;;
+              *.dmg) platform="macOS" ;;
+              *.AppImage|*.deb|*.rpm) platform="Linux" ;;
+            esac
+            echo "| $platform | $name ($size) |" >> CHANGELOG.md
+          done
+          cat CHANGELOG.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: ${{ steps.version.outputs.tag }}
+          body_path: CHANGELOG.md
+          files: release/*
+          draft: false
+          prerelease: false
+          generate_release_notes: true
