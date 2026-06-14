@@ -103,6 +103,10 @@ tmp/
 # Electron 构建输出
 release/
 
+# Claude Code 内部文件
+.plan/
+.todo/
+
 # other
 .stats
 .config

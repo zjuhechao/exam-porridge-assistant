@@ -6,7 +6,7 @@
     "dev": "webpack serve",
     "build": "webpack --mode production",
     "typecheck": "tsc --noEmit",
-    "electron:dev": "concurrently -k \"npm run dev\" \"wait-on http://localhost:3015 && set NODE_ENV=development&& electron .\"",
+    "electron:dev": "concurrently -k \"npm run dev\" \"wait-on http://localhost:3015 && electron . --dev\"",
     "electron:build": "npm run build && electron-builder",
     "electron:pack": "npm run build && electron-builder --dir"
   },
