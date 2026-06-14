@@ -332,7 +332,16 @@ body {
 .hover-text-title:hover { color: var(--text-title); }
 .hover-text-body:hover { color: var(--text-body); }
 
-/* 半透明变体（使用 color-mix 现代 CSS） */
-.bg-card-50 { background-color: color-mix(in srgb, var(--bg-card) 50%, transparent); }
-.bg-elevated-50 { background-color: color-mix(in srgb, var(--bg-elevated) 50%, transparent); }
-.border-elevated-50 { border-color: color-mix(in srgb, var(--bg-elevated) 50%, transparent); }
+/* 半透明变体（使用 color-mix 现代 CSS，带降级） */
+.bg-card-50 {
+  background-color: var(--bg-card);
+  background-color: color-mix(in srgb, var(--bg-card) 50%, transparent);
+}
+.bg-elevated-50 {
+  background-color: var(--bg-elevated);
+  background-color: color-mix(in srgb, var(--bg-elevated) 50%, transparent);
+}
+.border-elevated-50 {
+  border-color: var(--border-elevated);
+  border-color: color-mix(in srgb, var(--bg-elevated) 50%, transparent);
+}
