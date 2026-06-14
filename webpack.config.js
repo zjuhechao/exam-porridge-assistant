@@ -78,9 +78,9 @@ module.exports = (env, argv) => {
       host: '0.0.0.0',
       allowedHosts: 'all',
       historyApiFallback: {
-        index: '/index.html',
         rewrites: [
-          { from: /^\/_p\/\d+\//, to: '/index.html' }
+          { from: /^\/_p\/\d+\//, to: '/index.html' },
+          { from: /./, to: '/index.html' }
         ]
       }
     },

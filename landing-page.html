@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>考试粥助手 - AI 智能备考工具</title>
+  <style>
+    /* Reset & Base */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      line-height: 1.6;
+    }
+    a { color: #22d3ee; text-decoration: none; }
+    a:hover { color: #67e8f9; }
+
+    /* Hero */
+    .hero {
+      min-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 2rem;
+      background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle at 30% 50%, rgba(34,211,238,0.06) 0%, transparent 50%),
+                  radial-gradient(circle at 70% 50%, rgba(168,85,247,0.06) 0%, transparent 50%);
+      animation: float 20s ease-in-out infinite;
+    }
+    @keyframes float {
+      0%, 100% { transform: translate(0, 0) rotate(0deg); }
+      50% { transform: translate(2%, 1%) rotate(2deg); }
+    }
+    .hero-content { position: relative; z-index: 1; max-width: 720px; }
+    .hero-icon {
+      width: 80px; height: 80px;
+      background: linear-gradient(135deg, #22d3ee, #a855f7);
+      border-radius: 20px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 1.5rem;
+      font-size: 2.5rem;
+    }
+    .hero h1 {
+      font-size: 3rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #22d3ee, #a855f7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 1rem;
+    }
+    .hero p {
+      font-size: 1.2rem;
+      color: #94a3b8;
+      margin-bottom: 2rem;
+      max-width: 560px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .hero-tags {
+      display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; margin-bottom: 2rem;
+    }
+    .hero-tags span {
+      padding: 0.4rem 1rem;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+    .tag-ai { background: rgba(34,211,238,0.15); color: #22d3ee; }
+    .tag-local { background: rgba(52,211,153,0.15); color: #34d399; }
+    .tag-free { background: rgba(251,191,36,0.15); color: #fbbf24; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.9rem 2rem;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 600;
+      transition: all 0.2s;
+      border: none;
+      cursor: pointer;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #22d3ee, #a855f7);
+      color: #fff;
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(34,211,238,0.3);
+    }
+    .btn-outline {
+      background: transparent;
+      color: #e2e8f0;
+      border: 1px solid #334155;
+    }
+    .btn-outline:hover {
+      border-color: #22d3ee;
+      color: #22d3ee;
+    }
+
+    /* Section */
+    section {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 5rem 2rem;
+    }
+    section h2 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: #f1f5f9;
+    }
+    section .subtitle {
+      color: #64748b;
+      margin-bottom: 3rem;
+      font-size: 1rem;
+    }
+
+    /* Features Grid */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.5rem;
+    }
+    .feature-card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 1.8rem;
+      transition: all 0.2s;
+    }
+    .feature-card:hover {
+      border-color: #22d3ee;
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(34,211,238,0.1);
+    }
+    .feature-icon {
+      width: 48px; height: 48px;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem;
+      margin-bottom: 1rem;
+    }
+    .feature-card h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: #f1f5f9;
+    }
+    .feature-card p {
+      font-size: 0.9rem;
+      color: #94a3b8;
+    }
+
+    /* Usage Steps */
+    .usage-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+    .step {
+      display: flex;
+      gap: 1.5rem;
+      align-items: flex-start;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 16px;
+      padding: 1.8rem;
+    }
+    .step-num {
+      width: 40px; height: 40px;
+      min-width: 40px;
+      background: linear-gradient(135deg, #22d3ee, #a855f7);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: #fff;
+    }
+    .step h3 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin-bottom: 0.3rem;
+      color: #f1f5f9;
+    }
+    .step p { color: #94a3b8; font-size: 0.9rem; }
+
+    /* Highlights */
+    .highlights {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+    .highlight-item {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 1.2rem 1.5rem;
+      text-align: center;
+    }
+    .highlight-item .num {
+      font-size: 2rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #22d3ee, #a855f7);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .highlight-item .label {
+      font-size: 0.85rem;
+      color: #64748b;
+      margin-top: 0.2rem;
+    }
+
+    /* Footer / CTA */
+    .cta-section {
+      text-align: center;
+      padding: 4rem 2rem;
+      border-top: 1px solid #1e293b;
+    }
+    .cta-section h2 { margin-bottom: 1rem; }
+    .cta-section p { color: #94a3b8; margin-bottom: 2rem; }
+
+    footer {
+      text-align: center;
+      padding: 2rem;
+      color: #475569;
+      font-size: 0.85rem;
+      border-top: 1px solid #1e293b;
+    }
+    footer a { color: #64748b; }
+    footer a:hover { color: #22d3ee; }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .hero h1 { font-size: 2rem; }
+      .hero p { font-size: 1rem; }
+      .step { flex-direction: column; }
+      .step-num { width: 32px; height: 32px; min-width: 32px; font-size: 0.9rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-content">
+      <div class="hero-icon">📚</div>
+      <h1>考试粥助手</h1>
+      <p>
+        AI 驱动的智能备考工具箱 &mdash; 上传学习资料，AI 自动生成复习纲要、
+        学习笔记和练习题，搭配错题本实现高效复习闭环。数据全部在本地，无需服务器。
+      </p>
+      <div class="hero-tags">
+        <span class="tag-ai">AI 驱动</span>
+        <span class="tag-local">数据全本地</span>
+        <span class="tag-free">自带 API Key</span>
+      </div>
+      <div style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;">
+        <a href="https://github.com/zjuhechao/exam-porridge-assistant" class="btn btn-primary" target="_blank">
+          <!-- GitHub icon -->
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+          前往 GitHub
+        </a>
+        <a href="https://github.com/zjuhechao/exam-porridge-assistant/releases" class="btn btn-outline" target="_blank">
+          下载最新版
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- 功能 -->
+  <section>
+    <h2>核心功能</h2>
+    <p class="subtitle">覆盖学习全流程 &mdash; 从资料整理到掌握检测</p>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(34,211,238,0.15);color:#22d3ee;">📄</div>
+        <h3>知识库管理</h3>
+        <p>上传 PDF、Word、TXT、Markdown 等格式的学习资料，AI 自动提取文本内容，集中管理所有课程文档。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(168,85,247,0.15);color:#a855f7;">📝</div>
+        <h3>复习纲要 &amp; 学习笔记</h3>
+        <p>AI 根据文档内容自动生成结构化的复习纲要和详细的学习笔记，涵盖知识点归纳、重点难点解析。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(251,191,36,0.15);color:#fbbf24;">🧠</div>
+        <h3>智能出题</h3>
+        <p>支持选择题、填空题、判断题、简答题等多种题型，难度可调，AI 根据学习内容自动生成配套练习题。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(239,68,68,0.15);color:#ef4444;">❌</div>
+        <h3>错题本</h3>
+        <p>自动收集答题中的错题，标记掌握程度，支持基于错题重新出题强化，针对性弥补知识薄弱点。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(52,211,153,0.15);color:#34d399;">🔍</div>
+        <h3>刷题器 &amp; OCR</h3>
+        <p>导入已有试卷或题库，AI 自动识别题目结构并补全答案和解析。支持图片 OCR 识别纸质资料。</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(139,92,246,0.15);color:#8b5cf6;">🔒</div>
+        <h3>数据全本地</h3>
+        <p>所有数据存储在浏览器 IndexedDB 中，不经过任何服务器。仅 AI 调用需要联网，隐私安全有保障。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 使用说明 -->
+  <section>
+    <h2>快速上手</h2>
+    <p class="subtitle">三步开始使用</p>
+    <div class="usage-steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div>
+          <h3>配置 AI API</h3>
+          <p>打开设置页面，填写你的 API Key（支持 DeepSeek / OpenAI / Claude 等兼容接口）。Base URL 填入你的 API 服务地址，如 <code style="color:#22d3ee;">https://api.deepseek.com</code>，模型名填 <code style="color:#22d3ee;">deepseek-chat</code> 等。</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div>
+          <h3>上传学习资料</h3>
+          <p>在知识库中创建课程并上传学习资料（支持 PDF / Word / TXT / Markdown / 图片）。AI 会自动提取文本内容，作为后续生成题目和笔记的基础。</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div>
+          <h3>开始学习</h3>
+          <p>使用复习助手生成纲要和笔记，在智能答题中选择文档和题型进行练习，答错的题目自动收入错题本，针对性地巩固薄弱环节。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Highlights -->
+  <section>
+    <h2>为什么选择考试粥助手？</h2>
+    <p class="subtitle">专为备考场景设计的完整学习闭环</p>
+    <div class="highlights">
+      <div class="highlight-item">
+        <div class="num">100%</div>
+        <div class="label">数据本地存储，隐私无忧</div>
+      </div>
+      <div class="highlight-item">
+        <div class="num">多模型</div>
+        <div class="label">自由选择 AI 模型</div>
+      </div>
+      <div class="highlight-item">
+        <div class="num">6+</div>
+        <div class="label">学科定制提示词</div>
+      </div>
+      <div class="highlight-item">
+        <div class="num">开源</div>
+        <div class="label">代码完全开放</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <div class="cta-section">
+    <h2>开始使用</h2>
+    <p>克隆或下载仓库，配置好 API Key 即可使用</p>
+    <div style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;">
+      <a href="https://github.com/zjuhechao/exam-porridge-assistant" class="btn btn-primary" target="_blank">查看源码</a>
+      <a href="https://github.com/zjuhechao/exam-porridge-assistant/releases" class="btn btn-outline" target="_blank">下载 Release</a>
+    </div>
+  </div>
+
+  <footer>
+    <p>
+      考试粥助手 &mdash;
+      <a href="https://github.com/zjuhechao" target="_blank">zjuhechao</a>
+    </p>
+  </footer>
+
+</body>
+</html>
